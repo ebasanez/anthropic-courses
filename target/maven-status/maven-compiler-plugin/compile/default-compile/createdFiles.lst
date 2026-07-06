@@ -1,2 +1,12 @@
 com/bprojects/courses/claude/controller/ClaudeController.class
+com/bprojects/courses/claude/tools/DateTimeTools.class
+com/bprojects/courses/claude/tools/MyTools.class
+com/bprojects/courses/claude/config/ModelLoggingConfig.class
 com/bprojects/courses/claude/ClaudeApplication.class
+com/bprojects/courses/claude/controller/ConfigController.class
+com/bprojects/courses/claude/service/ClaudeService.class
+com/bprojects/courses/claude/config/ModelLoggingConfig$LoggingInterceptor.class
+com/bprojects/courses/claude/vo/Tone.class
+com/bprojects/courses/claude/tools/TextEditorTool.class
+com/bprojects/courses/claude/service/ClaudeService$1.class
+com/bprojects/courses/claude/service/ToolsService.class

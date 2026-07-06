@@ -88,12 +88,14 @@
         .assistant::before { content: "claude$ "; color: var(--green-dim); }
         .error { color: #ff4d4d; text-shadow: 0 0 4px #ff4d4d; }
         .error::before { content: "ERROR: "; }
-        form { display: flex; gap: 8px; align-items: center; }
-        form::before {
+        form { display: flex; flex-direction: column; gap: 8px; }
+        .row { display: flex; gap: 8px; align-items: center; }
+        .main-row::before {
             content: ">";
             color: var(--green);
             font-size: 1.1rem;
         }
+        .options-row { padding-left: 18px; }
         input[type=text], input[type=number], select {
             padding: 10px;
             font-size: 1rem;
@@ -126,6 +128,18 @@
             color: #000;
         }
         button:disabled { opacity: 0.4; cursor: default; }
+        #send { background: var(--green); color: #000; }
+        .check-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            color: var(--green);
+        }
+        .check-label input[type=checkbox] {
+            accent-color: var(--green);
+        }
 
         /* blinking cursor on the input row */
         .cursor {
@@ -155,17 +169,36 @@
     </div>
     <div id="chat"></div>
     <form id="form">
-        <input type="text" id="message" placeholder="type a command..." autocomplete="off" required>
-        <select id="maxTokens">
-            <option value="">Unlimited</option>
-            <option value="50">Brief</option>
-            <option value="100">Lite</option>
-            <option value="300">Verbose</option>
-        </select>
-        <button type="submit" id="send">Send</button>
-        <button type="button" id="reset">Reset</button>
-        <input type="hidden" id="tone" name="tone" value="KIND">
-        <span class="cursor"></span>
+        <div class="row main-row">
+            <input type="text" id="message" placeholder="type a command..." autocomplete="off" required>
+            <button type="button" id="reset">Reset</button>
+            <button type="submit" id="send">Send</button>
+            <input type="hidden" id="tone" name="tone" value="KIND">
+            <span class="cursor"></span>
+        </div>
+        <div class="row options-row">
+            <select id="maxTokens">
+                <option value="">Unlimited</option>
+                <option value="50">Brief</option>
+                <option value="100">Lite</option>
+                <option value="300">Verbose</option>
+            </select>
+            <select id="temperature">
+                <option value="">Default</option>
+                <option value="0.0">0.0</option>
+                <option value="0.1">0.1</option>
+                <option value="0.2">0.2</option>
+                <option value="0.3">0.3</option>
+                <option value="0.4">0.4</option>
+                <option value="0.5">0.5</option>
+                <option value="0.6">0.6</option>
+                <option value="0.7">0.7</option>
+                <option value="0.8">0.8</option>
+                <option value="0.9">0.9</option>
+                <option value="1.0">1.0</option>
+            </select>
+            <label class="check-label"><input type="checkbox" id="streamMode"> Stream mode</label>
+        </div>
     </form>
 
     <script>
@@ -173,8 +206,10 @@
         const form = document.getElementById('form');
         const input = document.getElementById('message');
         const maxTokensInput = document.getElementById('maxTokens');
+        const temperatureInput = document.getElementById('temperature');
         const sendBtn = document.getElementById('send');
         const resetBtn = document.getElementById('reset');
+        const streamModeInput = document.getElementById('streamMode');
 
         let conversationId = sessionStorage.getItem('conversationId');
         if (!conversationId) {
@@ -193,6 +228,30 @@
 
         addMessage('System ready. Awaiting input...', 'assistant');
 
+        async function streamInto(url, target) {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            target.textContent = '';
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const events = buffer.split('\n\n');
+                buffer = events.pop();
+                for (const event of events) {
+                    const text = event.split('\n')
+                        .filter(line => line.startsWith('data:'))
+                        .map(line => line.slice(5).replace(/^ /, ''))
+                        .join('\n');
+                    if (text) target.textContent += text;
+                    chat.scrollTop = chat.scrollHeight;
+                }
+            }
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const message = input.value.trim();
@@ -204,15 +263,22 @@
             const pending = addMessage('...', 'assistant');
 
             try {
-                let url = '/api/ai/chat?message=' + encodeURIComponent(message)
+                const streaming = streamModeInput.checked;
+                let url = '/api/ai/' + (streaming ? 'stream' : 'chat') + '?message=' + encodeURIComponent(message)
                     + '&conversationId=' + encodeURIComponent(conversationId)
                     + '&tone=' + encodeURIComponent(toneInput.value);
                 const maxTokens = maxTokensInput.value.trim();
                 if (maxTokens) url += '&maxTokens=' + encodeURIComponent(maxTokens);
+                const temperature = temperatureInput.value.trim();
+                if (temperature) url += '&temperature=' + encodeURIComponent(temperature);
 
-                const res = await fetch(url);
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                pending.textContent = await res.text();
+                if (streaming) {
+                    await streamInto(url, pending);
+                } else {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    pending.textContent = await res.text();
+                }
             } catch (err) {
                 pending.classList.add('error');
                 pending.textContent = err.message;
@@ -244,6 +310,10 @@
             sessionStorage.setItem('conversationId', conversationId);
             chat.innerHTML = '';
             addMessage('System ready. Awaiting input...', 'assistant');
+            maxTokensInput.value = '';
+            temperatureInput.value = '';
+            streamModeInput.checked = false;
+            document.querySelector('.traffic-lights .dot-green').click();
             input.focus();
         });
     </script>

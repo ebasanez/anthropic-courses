@@ -1,0 +1,20 @@
+[
+  {
+    "id": "aws_java_001",
+    "type": "java",
+    "task": "Write a Java function using AWS SDK v2 that uploads a single file to S3 bucket",
+    "criteria": "Uses S3Client or S3AsyncClient from AWS SDK v2; calls putObject with a PutObjectRequest specifying bucket and key; accepts file path or InputStream parameter; throws or handles SdkException; returns PutObjectResponse or void"
+  },
+  {
+    "id": "aws_json_001",
+    "type": "json",
+    "task": "Generate an IAM policy JSON that allows read-only access to a specific S3 bucket",
+    "criteria": "Valid JSON with Version and Statement fields; Effect is Allow; Action includes s3:GetObject and s3:ListBucket (or s3:Get*/s3:List*); Resource scoped to the specific bucket ARN and its objects (arn:aws:s3:::bucket and arn:aws:s3:::bucket/*); no write or delete actions"
+  },
+  {
+    "id": "aws_regex_001",
+    "type": "regex",
+    "task": "Write a regex pattern to extract AWS S3 bucket name and object key from ARN format: arn:aws:s3:::bucket-name/object/key",
+    "criteria": "Pattern matches the literal prefix arn:aws:s3:::; captures bucket name (alphanumeric and hyphens) in group 1; captures the full object key path after the slash in group 2; does not match malformed ARNs missing the s3::: segment"
+  }
+]

@@ -23,15 +23,20 @@ public class ClaudeController {
     @GetMapping("/chat")
     public String chat(@RequestParam(value = "message") String message,
                         @RequestParam(value = "maxTokens", required = false) Integer maxTokens,
+                        @RequestParam(value = "temperature", required = false) Double temperature,
                         @RequestParam(value = "conversationId", required = false) String conversationId,
                        @RequestParam(value = "tone", required = false) Tone tone) {
-        return claudeService.generateResponse(message, maxTokens, conversationId, tone);
+        return claudeService.generateResponse(message, maxTokens, temperature, conversationId, tone);
     }
 
     // Server-Sent Events (SSE) for real-time text streaming
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> stream(@RequestParam(value = "message") String message) {
-        return claudeService.streamResponse(message);
+    public Flux<String> stream(@RequestParam(value = "message") String message,
+                                @RequestParam(value = "maxTokens", required = false) Integer maxTokens,
+                                @RequestParam(value = "temperature", required = false) Double temperature,
+                                @RequestParam(value = "conversationId", required = false) String conversationId,
+                                @RequestParam(value = "tone", required = false) Tone tone) {
+        return claudeService.streamResponse(message, maxTokens, temperature, conversationId, tone);
     }
 
 }

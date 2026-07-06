@@ -6,7 +6,3 @@ spring:
       api-key: ${ANTHROPIC_API_KEY}
       chat:
         model: claude-sonnet-4-6
-
-logging:
-  level:
-    model.wire: DEBUG
