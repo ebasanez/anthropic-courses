@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.bprojects.courses.claude.service.ClaudeServiceToneEvaluationTest
--------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.006 s -- in com.bprojects.courses.claude.service.ClaudeServiceToneEvaluationTest

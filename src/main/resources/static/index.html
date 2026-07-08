@@ -156,6 +156,40 @@
         ::-webkit-scrollbar { width: 10px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+        /* RAG document upload */
+        .rag-bar {
+            border-top: 1px solid var(--green-dim);
+            margin-top: 16px;
+            padding-top: 10px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            color: var(--green-dim);
+        }
+        input[type=file] {
+            flex: 1;
+            padding: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background: #000;
+            border: 1px solid var(--green-dim);
+            color: var(--green);
+        }
+        input[type=file]::file-selector-button {
+            font-family: inherit;
+            background: #000;
+            color: var(--green);
+            border: 1px solid var(--green-dim);
+            padding: 6px 10px;
+            margin-right: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        input[type=file]::file-selector-button:hover { background: var(--green); color: #000; }
+        #ragSend { background: var(--green); color: #000; }
+        .rag-status { min-height: 1.2em; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -200,6 +234,23 @@
             <label class="check-label"><input type="checkbox" id="streamMode"> Stream mode</label>
         </div>
     </form>
+
+    <div id="ragSection" style="display:none">
+        <div class="rag-bar">RAG // DOCUMENT UPLOAD</div>
+        <form id="ragForm">
+            <div class="row">
+                <input type="file" id="ragFiles" name="files" multiple
+                       accept=".txt,.md,.pdf,text/plain,text/markdown,application/pdf">
+                <select id="ragSplit" title="Chunking strategy">
+                    <option value="">Default</option>
+                    <option value="TOKEN">Token</option>
+                    <option value="SEMANTIC">Semantic</option>
+                </select>
+                <button type="submit" id="ragSend">Upload</button>
+            </div>
+            <div id="ragStatus" class="msg assistant rag-status"></div>
+        </form>
+    </div>
 
     <script>
         const chat = document.getElementById('chat');
@@ -316,6 +367,50 @@
             document.querySelector('.traffic-lights .dot-green').click();
             input.focus();
         });
+
+        // --- Independent RAG document upload (no page reload) ---
+        const ragSection = document.getElementById('ragSection');
+        const ragForm = document.getElementById('ragForm');
+        const ragFiles = document.getElementById('ragFiles');
+        const ragSplit = document.getElementById('ragSplit');
+        const ragSend = document.getElementById('ragSend');
+        const ragStatus = document.getElementById('ragStatus');
+
+        ragForm.addEventListener('submit', async (e) => {
+            e.preventDefault();                       // no full-page reload
+            if (!ragFiles.files.length) {
+                ragStatus.classList.remove('error');
+                ragStatus.textContent = 'Select at least one file (.txt, .md, .pdf).';
+                return;
+            }
+            const data = new FormData();
+            for (const f of ragFiles.files) data.append('files', f);   // matches @RequestParam("files")
+            if (ragSplit.value) data.append('splitMethod', ragSplit.value);   // omit -> server default
+
+            ragSend.disabled = true;
+            ragStatus.classList.remove('error');
+            ragStatus.textContent = 'Uploading ' + ragFiles.files.length + ' file(s)...';
+            try {
+                const res = await fetch('/api/ai/documents', { method: 'POST', body: data });
+                if (res.status === 404) throw new Error('RAG disabled — start the app with the "rag" profile.');
+                if (res.status === 413) throw new Error('File too large — exceeds the server upload limit.');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const json = await res.json();
+                ragStatus.textContent = 'Ingested ' + json.chunksIngested
+                    + ' chunk(s) from ' + json.filesReceived + ' file(s).';
+                ragForm.reset();
+            } catch (err) {
+                ragStatus.classList.add('error');
+                ragStatus.textContent = err.message;
+            } finally {
+                ragSend.disabled = false;
+            }
+        });
+
+        // Show upload section only when RAG is enabled (endpoint exists under "rag" profile).
+        fetch('/api/ai/documents', { method: 'GET' })
+            .then(res => { if (res.ok) ragSection.style.display = ''; })
+            .catch(() => {});
     </script>
 </body>
 </html>

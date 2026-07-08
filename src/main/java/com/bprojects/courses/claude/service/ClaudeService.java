@@ -7,11 +7,15 @@ import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.anthropic.AnthropicWebSearchTool;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,15 +29,23 @@ public class ClaudeService {
     private final ChatClient chatClient;
     private final ToolsService toolsService;
 
-    // Inject the autoconfigured Builder
-    public ClaudeService(ChatClient.Builder chatClientBuilder, ToolsService toolsService) {
+    // Inject the autoconfigured Builder. The QuestionAnswerAdvisor is only present
+    // when RAG is enabled (rag.enabled=true) -> injected via ObjectProvider.
+    public ClaudeService(ChatClient.Builder chatClientBuilder,
+                         ToolsService toolsService,
+                         ObjectProvider<QuestionAnswerAdvisor> qaAdvisorProvider) {
         this.toolsService = toolsService;
         ChatMemory chatMemory = MessageWindowChatMemory.builder()
                 .maxMessages(20)
                 .build();
+
+        List<Advisor> advisors = new ArrayList<>();
+        advisors.add(MessageChatMemoryAdvisor.builder(chatMemory).build());
+        qaAdvisorProvider.ifAvailable(advisors::add);   // RAG retrieval only when enabled
+
         this.chatClient = chatClientBuilder
                 .defaultSystem("You are a witty, helpful AI assistant." + NO_CODE_FENCES)
-                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+                .defaultAdvisors(advisors.toArray(new Advisor[0]))
                 .build();
     }
 

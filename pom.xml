@@ -41,6 +41,37 @@
 			<artifactId>spring-ai-starter-model-anthropic</artifactId>
 		</dependency>
 
+		<!-- RAG: Ollama embedding model (chat autoconfig disabled via spring.ai.model.chat) -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-model-ollama</artifactId>
+		</dependency>
+
+		<!-- RAG: QuestionAnswerAdvisor (2.0 renamed module) -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-vector-store-advisor</artifactId>
+		</dependency>
+
+		<!-- RAG: persistent pgvector store (autoconfigures a PgVectorStore bean) -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
+		</dependency>
+
+		<!-- RAG: Tika reader (text / PDF / MD / DOCX / HTML) -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-tika-document-reader</artifactId>
+		</dependency>
+
+		<!-- RAG: Boot auto-starts the Ollama container from compose.yaml -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-docker-compose</artifactId>
+			<optional>true</optional>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

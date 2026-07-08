@@ -1,12 +1,41 @@
 spring:
   application:
     name: spring-ai-claude-demo
+  autoconfigure:
+    # pgvector starter puts a JDBC driver + vector-store autoconfig on the classpath;
+    # without a datasource (default profile) both fail. Off unless rag is on.
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
+  servlet:
+    multipart:
+      max-file-size: 100MB               # per single file
+      max-request-size: 200MB            # total request (all files combined)
+  docker:
+    compose:
+      enabled: false                     # default: no Ollama container
   ai:
+    model:
+      chat: anthropic                    # Claude stays the chat model
+      embedding: none                    # default: NO embeddings -> Ollama autoconfig backs off
     anthropic:
       api-key: ${ANTHROPIC_API_KEY}
       chat:
         model: claude-sonnet-4-6
 
+server:
+  tomcat:
+    # don't reset the connection when rejecting an oversize upload -> client gets a clean error
+    max-swallow-size: -1
+
 logging:
   level:
     model.wire: DEBUG
+tools:
+    text-editor:
+        enabled: false
+
+rag:
+  splitter: TOKEN                          # default chunking strategy: TOKEN (fast) | SEMANTIC (embedding-based)
+  semantic:
+    breakpoint-percentile: 95.0            # SEMANTIC only: lower = more, smaller chunks
