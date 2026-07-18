@@ -4,6 +4,7 @@ import com.bprojects.courses.claude.tools.MyTools;
 import com.bprojects.courses.claude.vo.Tone;
 import org.jspecify.annotations.Nullable;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
+import org.springframework.ai.anthropic.AnthropicCitationDocument;
 import org.springframework.ai.anthropic.AnthropicWebSearchTool;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -60,10 +61,11 @@ public class ClaudeService {
             @Nullable Set<String> ragDocumentIds,
             @Nullable String conversationId,
             @Nullable Tone tone) {
-        return generateResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, null);
+        return generateResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, null, null);
     }
 
     // Synchronous (blocking) call to Claude, optionally with attached images (vision)
+    // and PDF documents (sent as citation documents, citations enabled).
     public String generateResponse(
             String message,
             Integer maxTokens,
@@ -72,8 +74,9 @@ public class ClaudeService {
             @Nullable Set<String> ragDocumentIds,
             @Nullable String conversationId,
             @Nullable Tone tone,
-            @Nullable List<Media> media) {
-        var spec = buildPromptSpec(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, media);
+            @Nullable List<Media> media,
+            @Nullable List<AnthropicCitationDocument> citationDocuments) {
+        var spec = buildPromptSpec(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, media, citationDocuments);
         return spec.call().content();
     }
 
@@ -86,10 +89,11 @@ public class ClaudeService {
             @Nullable Set<String> ragDocumentIds,
             @Nullable String conversationId,
             @Nullable Tone tone) {
-        return streamResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, null);
+        return streamResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, null, null);
     }
 
     // Streaming (reactive) call to Claude, optionally with attached images (vision)
+    // and PDF documents (sent as citation documents, citations enabled).
     public Flux<String> streamResponse(
             String message,
             Integer maxTokens,
@@ -98,8 +102,9 @@ public class ClaudeService {
             @Nullable Set<String> ragDocumentIds,
             @Nullable String conversationId,
             @Nullable Tone tone,
-            @Nullable List<Media> media) {
-        var spec = buildPromptSpec(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, media);
+            @Nullable List<Media> media,
+            @Nullable List<AnthropicCitationDocument> citationDocuments) {
+        var spec = buildPromptSpec(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, media, citationDocuments);
         return spec.stream().content();
     }
 
@@ -111,7 +116,8 @@ public class ClaudeService {
             @Nullable Set<String> ragDocumentIds,
             @Nullable String conversationId,
             @Nullable Tone tone,
-            @Nullable List<Media> media) {
+            @Nullable List<Media> media,
+            @Nullable List<AnthropicCitationDocument> citationDocuments) {
 
         if (conversationId == null) {
             conversationId = UUID.randomUUID().toString();
@@ -134,6 +140,10 @@ public class ClaudeService {
         }
 
         var optionsBuilder = AnthropicChatOptions.builder();
+        // Attached PDFs ride along as citation documents so answers can cite pages.
+        if (citationDocuments != null && !citationDocuments.isEmpty()) {
+            optionsBuilder.citationDocuments(citationDocuments);
+        }
         // Enable Claude's built-in (server-side) web search tool unless disabled by property.
         if (toolsService.isNativeWebSearchToolEnabled()) {
             optionsBuilder.webSearchTool(AnthropicWebSearchTool.builder().maxUses(5).build());

@@ -141,10 +141,10 @@
             accent-color: var(--green);
         }
         #chatImages {
+            flex: 1;
             font-family: inherit;
             font-size: 0.8rem;
             color: var(--green-dim);
-            max-width: 220px;
         }
         #chatImages::file-selector-button {
             padding: 4px 8px;
@@ -162,6 +162,11 @@
             max-height: 150px;
             margin-top: 6px;
             border: 1px solid var(--green-dim);
+        }
+        .msg-attachment {
+            margin-top: 4px;
+            font-size: 0.85rem;
+            color: var(--green-dim);
         }
 
         /* blinking cursor on the input row */
@@ -282,6 +287,10 @@
             <span class="cursor"></span>
         </div>
         <div class="row options-row">
+            <input type="file" id="chatImages" title="Attach images or PDFs for Claude to analyze"
+                   accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,.pdf" multiple>
+        </div>
+        <div class="row options-row">
             <select id="maxTokens">
                 <option value="">Unlimited</option>
                 <option value="50">Brief</option>
@@ -310,8 +319,6 @@
                 <option value="8192">Think 8k</option>
             </select>
             <label class="check-label"><input type="checkbox" id="streamMode"> Stream mode</label>
-            <input type="file" id="chatImages" title="Attach images for Claude to analyze"
-                   accept="image/jpeg,image/png,image/gif,image/webp" multiple>
         </div>
     </form>
     </div>
@@ -398,8 +405,15 @@
 
             const images = [...chatImagesInput.files];
             const userMsg = addMessage(message, 'user');
-            // Thumbnail preview of attached images in the user bubble.
+            // Attachment preview in the user bubble: image thumbnail, or filename for PDFs.
             images.forEach(f => {
+                if (f.type === 'application/pdf') {
+                    const tag = document.createElement('div');
+                    tag.className = 'msg-attachment';
+                    tag.textContent = '[pdf] ' + f.name;
+                    userMsg.appendChild(tag);
+                    return;
+                }
                 const img = document.createElement('img');
                 img.className = 'msg-img';
                 const blobUrl = URL.createObjectURL(f);
@@ -442,7 +456,7 @@
                 if (images.length) {
                     const data = new FormData();
                     params.forEach((v, k) => data.append(k, v));
-                    images.forEach(f => data.append('images', f));
+                    images.forEach(f => data.append('media', f));
                     opts = { method: 'POST', body: data };
                 } else {
                     url += '?' + params.toString();
