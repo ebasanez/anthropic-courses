@@ -7,18 +7,19 @@ import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.anthropic.AnthropicWebSearchTool;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.content.Media;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ClaudeService {
@@ -28,6 +29,10 @@ public class ClaudeService {
 
     private final ChatClient chatClient;
     private final ToolsService toolsService;
+    // Present only when RAG is enabled. Attached per request (not as a default advisor) so a
+    // request can skip it entirely — no vector-store query — when RAG is disabled for that call.
+    @Nullable
+    private final QuestionAnswerAdvisor ragAdvisor;
 
     // Inject the autoconfigured Builder. The QuestionAnswerAdvisor is only present
     // when RAG is enabled (rag.enabled=true) -> injected via ObjectProvider.
@@ -35,17 +40,14 @@ public class ClaudeService {
                          ToolsService toolsService,
                          ObjectProvider<QuestionAnswerAdvisor> qaAdvisorProvider) {
         this.toolsService = toolsService;
+        this.ragAdvisor = qaAdvisorProvider.getIfAvailable();
         ChatMemory chatMemory = MessageWindowChatMemory.builder()
                 .maxMessages(20)
                 .build();
 
-        List<Advisor> advisors = new ArrayList<>();
-        advisors.add(MessageChatMemoryAdvisor.builder(chatMemory).build());
-        qaAdvisorProvider.ifAvailable(advisors::add);   // RAG retrieval only when enabled
-
         this.chatClient = chatClientBuilder
                 .defaultSystem("You are a witty, helpful AI assistant." + NO_CODE_FENCES)
-                .defaultAdvisors(advisors.toArray(new Advisor[0]))
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
                 .build();
     }
 
@@ -54,9 +56,24 @@ public class ClaudeService {
             String message,
             Integer maxTokens,
             @Nullable Double temperature,
+            @Nullable Integer thinkingBudget,
+            @Nullable Set<String> ragDocumentIds,
             @Nullable String conversationId,
             @Nullable Tone tone) {
-        var spec = buildPromptSpec(message, maxTokens, temperature, conversationId, tone);
+        return generateResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, null);
+    }
+
+    // Synchronous (blocking) call to Claude, optionally with attached images (vision)
+    public String generateResponse(
+            String message,
+            Integer maxTokens,
+            @Nullable Double temperature,
+            @Nullable Integer thinkingBudget,
+            @Nullable Set<String> ragDocumentIds,
+            @Nullable String conversationId,
+            @Nullable Tone tone,
+            @Nullable List<Media> media) {
+        var spec = buildPromptSpec(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, media);
         return spec.call().content();
     }
 
@@ -65,9 +82,24 @@ public class ClaudeService {
             String message,
             Integer maxTokens,
             @Nullable Double temperature,
+            @Nullable Integer thinkingBudget,
+            @Nullable Set<String> ragDocumentIds,
             @Nullable String conversationId,
             @Nullable Tone tone) {
-        var spec = buildPromptSpec(message, maxTokens, temperature, conversationId, tone);
+        return streamResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, null);
+    }
+
+    // Streaming (reactive) call to Claude, optionally with attached images (vision)
+    public Flux<String> streamResponse(
+            String message,
+            Integer maxTokens,
+            @Nullable Double temperature,
+            @Nullable Integer thinkingBudget,
+            @Nullable Set<String> ragDocumentIds,
+            @Nullable String conversationId,
+            @Nullable Tone tone,
+            @Nullable List<Media> media) {
+        var spec = buildPromptSpec(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, media);
         return spec.stream().content();
     }
 
@@ -75,16 +107,26 @@ public class ClaudeService {
             String message,
             Integer maxTokens,
             @Nullable Double temperature,
+            @Nullable Integer thinkingBudget,
+            @Nullable Set<String> ragDocumentIds,
             @Nullable String conversationId,
-            @Nullable Tone tone) {
+            @Nullable Tone tone,
+            @Nullable List<Media> media) {
 
         if (conversationId == null) {
             conversationId = UUID.randomUUID().toString();
         }
         final String finalConversationId = Optional.ofNullable(conversationId).orElse(String.valueOf(UUID.randomUUID()));
         var spec = this.chatClient.prompt()
-                .user(message)
+                .user(u -> {
+                    u.text(message);
+                    if (media != null) {
+                        media.forEach(u::media);
+                    }
+                })
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, finalConversationId));
+
+        spec = applyRag(spec, ragDocumentIds);
 
         List<MyTools> activeTools = toolsService.getEnabledTools();
         if (activeTools != null && !activeTools.isEmpty()) {
@@ -96,17 +138,56 @@ public class ClaudeService {
         if (toolsService.isNativeWebSearchToolEnabled()) {
             optionsBuilder.webSearchTool(AnthropicWebSearchTool.builder().maxUses(5).build());
         }
-        if (maxTokens != null) {
-            optionsBuilder.maxTokens(maxTokens);
-        }
-        if (temperature != null) {
-            optionsBuilder.temperature(temperature);
+        boolean thinkingOn = thinkingBudget != null && thinkingBudget > 0;
+        if (thinkingOn) {
+            // Anthropic: budget >= 1024, maxTokens must exceed budget, and temperature must
+            // stay unset (the API forces temperature=1 when extended thinking is on).
+            int budget = Math.max(thinkingBudget, 1024);
+            optionsBuilder.thinkingEnabled(budget);
+            int floor = budget + 1024;
+            optionsBuilder.maxTokens(maxTokens != null && maxTokens > budget ? maxTokens : floor);
+        } else {
+            if (maxTokens != null) {
+                optionsBuilder.maxTokens(maxTokens);
+            }
+            if (temperature != null) {
+                optionsBuilder.temperature(temperature);
+            }
         }
         spec = spec.options(optionsBuilder);
         if (tone != null) {
             spec = spec.system(getSystemPrompt(tone));
         }
         return spec;
+    }
+
+    /**
+     * Attach the RAG retrieval advisor to the request, scoped by the caller's ragDocumentIds:
+     *   - absent (null)          -> retrieve across all documents
+     *   - present with valid ids -> restrict retrieval to those documents (docId filter)
+     *   - present but empty      -> skip the advisor entirely: no vector-store query at all
+     * Returns the spec unchanged when RAG is disabled (ragAdvisor is null).
+     */
+    private ChatClient.ChatClientRequestSpec applyRag(
+            ChatClient.ChatClientRequestSpec spec,
+            @Nullable Set<String> ragDocumentIds) {
+        if (ragAdvisor == null) {
+            return spec;
+        }
+        if (ragDocumentIds == null) {
+            return spec.advisors(ragAdvisor);
+        }
+        String inList = ragDocumentIds.stream()
+                .filter(id -> id != null && id.matches("[0-9a-fA-F-]{36}"))   // UUIDs only, block injection
+                .map(id -> "'" + id + "'")
+                .collect(Collectors.joining(", "));
+        if (inList.isBlank()) {
+            return spec;   // empty selection -> advisor not attached -> RAG off, no DB query
+        }
+        // QuestionAnswerAdvisor re-parses FILTER_EXPRESSION as filter text -> pass a DSL string.
+        String docFilter = "docId in [" + inList + "]";
+        return spec.advisors(ragAdvisor)
+                .advisors(a -> a.param(QuestionAnswerAdvisor.FILTER_EXPRESSION, docFilter));
     }
 
     public static String getSystemPrompt(Tone tone){

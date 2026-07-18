@@ -140,6 +140,29 @@
         .check-label input[type=checkbox] {
             accent-color: var(--green);
         }
+        #chatImages {
+            font-family: inherit;
+            font-size: 0.8rem;
+            color: var(--green-dim);
+            max-width: 220px;
+        }
+        #chatImages::file-selector-button {
+            padding: 4px 8px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            border: 1px solid var(--green-dim);
+            background: #000;
+            color: var(--green);
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .msg-img {
+            display: block;
+            max-width: 200px;
+            max-height: 150px;
+            margin-top: 6px;
+            border: 1px solid var(--green-dim);
+        }
 
         /* blinking cursor on the input row */
         .cursor {
@@ -156,6 +179,25 @@
         ::-webkit-scrollbar { width: 10px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+        /* Tab bar */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+        .tab {
+            padding: 8px 16px;
+            border-bottom: none;
+            opacity: 0.6;
+        }
+        .tab.active {
+            opacity: 1;
+            background: var(--green);
+            color: #000;
+        }
+        .panel { display: none; }
+        .panel.active { display: block; }
 
         /* RAG document upload */
         .rag-bar {
@@ -190,6 +232,29 @@
         input[type=file]::file-selector-button:hover { background: var(--green); color: #000; }
         #ragSend { background: var(--green); color: #000; }
         .rag-status { min-height: 1.2em; margin-top: 4px; }
+
+        /* RAG document list */
+        .rag-docs { overflow-x: auto; }
+        table.rag-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        table.rag-table th, table.rag-table td {
+            border: 1px solid var(--green-dim);
+            padding: 6px 10px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        table.rag-table th {
+            color: var(--green-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+        }
+        table.rag-table td.num { text-align: right; }
+        table.rag-table .doc-id { opacity: 0.6; font-size: 0.8rem; }
+        .rag-empty { opacity: 0.6; margin-top: 6px; }
     </style>
 </head>
 <body>
@@ -201,6 +266,12 @@
             <button type="button" class="dot dot-red" data-theme="red" aria-label="Red theme"></button>
         </div>
     </div>
+    <div class="tabs">
+        <button type="button" class="tab active" id="tabChat" data-panel="panelChat">Chat</button>
+        <button type="button" class="tab" id="tabRag" data-panel="panelRag" style="display:none">RAG</button>
+    </div>
+
+    <div id="panelChat" class="panel active">
     <div id="chat"></div>
     <form id="form">
         <div class="row main-row">
@@ -231,11 +302,21 @@
                 <option value="0.9">0.9</option>
                 <option value="1.0">1.0</option>
             </select>
+            <select id="thinkingBudget" title="Extended thinking budget (tokens)">
+                <option value="">Thinking off</option>
+                <option value="1024">Think 1k</option>
+                <option value="2048">Think 2k</option>
+                <option value="4096">Think 4k</option>
+                <option value="8192">Think 8k</option>
+            </select>
             <label class="check-label"><input type="checkbox" id="streamMode"> Stream mode</label>
+            <input type="file" id="chatImages" title="Attach images for Claude to analyze"
+                   accept="image/jpeg,image/png,image/gif,image/webp" multiple>
         </div>
     </form>
+    </div>
 
-    <div id="ragSection" style="display:none">
+    <div id="panelRag" class="panel">
         <div class="rag-bar">RAG // DOCUMENT UPLOAD</div>
         <form id="ragForm">
             <div class="row">
@@ -250,6 +331,11 @@
             </div>
             <div id="ragStatus" class="msg assistant rag-status"></div>
         </form>
+
+        <div class="rag-bar">RAG // LOADED DOCUMENTS
+            <button type="button" id="ragRefresh" style="float:right;padding:2px 8px;font-size:0.75rem">Refresh</button>
+        </div>
+        <div id="ragDocs" class="rag-docs"></div>
     </div>
 
     <script>
@@ -258,9 +344,11 @@
         const input = document.getElementById('message');
         const maxTokensInput = document.getElementById('maxTokens');
         const temperatureInput = document.getElementById('temperature');
+        const thinkingBudgetInput = document.getElementById('thinkingBudget');
         const sendBtn = document.getElementById('send');
         const resetBtn = document.getElementById('reset');
         const streamModeInput = document.getElementById('streamMode');
+        const chatImagesInput = document.getElementById('chatImages');
 
         let conversationId = sessionStorage.getItem('conversationId');
         if (!conversationId) {
@@ -279,8 +367,8 @@
 
         addMessage('System ready. Awaiting input...', 'assistant');
 
-        async function streamInto(url, target) {
-            const res = await fetch(url);
+        async function streamInto(url, target, opts) {
+            const res = await fetch(url, opts);
             if (!res.ok) throw new Error('HTTP ' + res.status);
             target.textContent = '';
             const reader = res.body.getReader();
@@ -308,25 +396,62 @@
             const message = input.value.trim();
             if (!message) return;
 
-            addMessage(message, 'user');
+            const images = [...chatImagesInput.files];
+            const userMsg = addMessage(message, 'user');
+            // Thumbnail preview of attached images in the user bubble.
+            images.forEach(f => {
+                const img = document.createElement('img');
+                img.className = 'msg-img';
+                const blobUrl = URL.createObjectURL(f);
+                img.onload = () => URL.revokeObjectURL(blobUrl);
+                img.src = blobUrl;
+                userMsg.appendChild(img);
+            });
             input.value = '';
             sendBtn.disabled = true;
             const pending = addMessage('...', 'assistant');
 
             try {
                 const streaming = streamModeInput.checked;
-                let url = '/api/ai/' + (streaming ? 'stream' : 'chat') + '?message=' + encodeURIComponent(message)
-                    + '&conversationId=' + encodeURIComponent(conversationId)
-                    + '&tone=' + encodeURIComponent(toneInput.value);
+                const path = '/api/ai/' + (streaming ? 'stream' : 'chat');
+                const params = new URLSearchParams();
+                params.append('message', message);
+                params.append('conversationId', conversationId);
+                params.append('tone', toneInput.value);
                 const maxTokens = maxTokensInput.value.trim();
-                if (maxTokens) url += '&maxTokens=' + encodeURIComponent(maxTokens);
+                if (maxTokens) params.append('maxTokens', maxTokens);
                 const temperature = temperatureInput.value.trim();
-                if (temperature) url += '&temperature=' + encodeURIComponent(temperature);
+                if (temperature) params.append('temperature', temperature);
+                const thinkingBudget = thinkingBudgetInput.value.trim();
+                if (thinkingBudget) params.append('thinkingBudget', thinkingBudget);
+                // Scope RAG retrieval to selected documents only when some are unchecked.
+                const docChecks = [...document.querySelectorAll('#ragDocs .rag-doc-check')];
+                if (docChecks.length && docChecks.some(c => !c.checked)) {
+                    const checked = docChecks.filter(c => c.checked);
+                    if (checked.length) {
+                        checked.forEach(c => params.append('ragDocumentIds', c.dataset.id));
+                    } else {
+                        params.append('ragDocumentIds', '');   // present but empty -> disable RAG for this request
+                    }
+                }
+
+                // Images -> multipart POST (vision); params travel as form fields.
+                // No images -> plain GET with query string, as before.
+                let url = path;
+                let opts;
+                if (images.length) {
+                    const data = new FormData();
+                    params.forEach((v, k) => data.append(k, v));
+                    images.forEach(f => data.append('images', f));
+                    opts = { method: 'POST', body: data };
+                } else {
+                    url += '?' + params.toString();
+                }
 
                 if (streaming) {
-                    await streamInto(url, pending);
+                    await streamInto(url, pending, opts);
                 } else {
-                    const res = await fetch(url);
+                    const res = await fetch(url, opts);
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     pending.textContent = await res.text();
                 }
@@ -334,6 +459,7 @@
                 pending.classList.add('error');
                 pending.textContent = err.message;
             } finally {
+                chatImagesInput.value = '';
                 sendBtn.disabled = false;
                 input.focus();
             }
@@ -363,13 +489,84 @@
             addMessage('System ready. Awaiting input...', 'assistant');
             maxTokensInput.value = '';
             temperatureInput.value = '';
+            thinkingBudgetInput.value = '';
             streamModeInput.checked = false;
             document.querySelector('.traffic-lights .dot-green').click();
             input.focus();
         });
 
+        // --- Tab switching ---
+        const tabRag = document.getElementById('tabRag');
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.panel).classList.add('active');
+            });
+        });
+
+        // --- RAG document list ---
+        const ragDocs = document.getElementById('ragDocs');
+        const ragRefresh = document.getElementById('ragRefresh');
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        async function loadDocuments() {
+            try {
+                const res = await fetch('/api/ai/documents', { method: 'GET' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const docs = await res.json();
+                if (!docs.length) {
+                    ragDocs.innerHTML = '<div class="rag-empty">No documents loaded.</div>';
+                    return;
+                }
+                const rows = docs.map(d => {
+                    const td = (v, cls) => '<td' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</td>';
+                    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+                    const del = '<button type="button" class="rag-del" data-id="' + esc(d.id) + '">Delete</button>';
+                    const check = '<input type="checkbox" class="rag-doc-check" data-id="' + esc(d.id) + '" checked>';
+                    return '<tr>' + td(check, 'num') + td(esc(d.name)) + td(formatSize(d.size), 'num')
+                        + td(d.chunks, 'num') + td(esc(d.splitMethod || '-'))
+                        + td(d.avgTokensPerChunk, 'num')
+                        + td(del, 'num') + '</tr>';
+                }).join('');
+                ragDocs.innerHTML = '<table class="rag-table"><thead><tr>'
+                    + '<th title="Include in chat retrieval">Use</th>'
+                    + '<th>Name</th><th>Size</th><th>Chunks</th><th>Algorithm</th>'
+                    + '<th>Avg Tokens</th><th></th>'
+                    + '</tr></thead><tbody>' + rows + '</tbody></table>';
+            } catch (err) {
+                ragDocs.innerHTML = '<div class="rag-empty error">' + err.message + '</div>';
+            }
+        }
+
+        ragRefresh.addEventListener('click', loadDocuments);
+
+        // Delete a document (event delegation over the table).
+        ragDocs.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.rag-del');
+            if (!btn) return;
+            const id = btn.dataset.id;
+            if (!confirm('Delete this document and all its chunks?')) return;
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/ai/documents/' + encodeURIComponent(id), { method: 'DELETE' });
+                if (res.status === 404) throw new Error('Document not found (already deleted?).');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                loadDocuments();
+            } catch (err) {
+                btn.disabled = false;
+                ragStatus.classList.add('error');
+                ragStatus.textContent = err.message;
+            }
+        });
+
         // --- Independent RAG document upload (no page reload) ---
-        const ragSection = document.getElementById('ragSection');
         const ragForm = document.getElementById('ragForm');
         const ragFiles = document.getElementById('ragFiles');
         const ragSplit = document.getElementById('ragSplit');
@@ -399,6 +596,7 @@
                 ragStatus.textContent = 'Ingested ' + json.chunksIngested
                     + ' chunk(s) from ' + json.filesReceived + ' file(s).';
                 ragForm.reset();
+                loadDocuments();
             } catch (err) {
                 ragStatus.classList.add('error');
                 ragStatus.textContent = err.message;
@@ -407,9 +605,9 @@
             }
         });
 
-        // Show upload section only when RAG is enabled (endpoint exists under "rag" profile).
+        // Show the RAG tab only when RAG is enabled (endpoint exists under "rag" profile).
         fetch('/api/ai/documents', { method: 'GET' })
-            .then(res => { if (res.ok) ragSection.style.display = ''; })
+            .then(res => { if (res.ok) { tabRag.style.display = ''; loadDocuments(); } })
             .catch(() => {});
     </script>
 </body>

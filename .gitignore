@@ -31,3 +31,6 @@ replay_pid*
 
 # Local build tools
 .mvn/
+
+# Compiled resources
+target/
