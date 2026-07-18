@@ -40,7 +40,8 @@ class RagConfig {
     @Bean
     SemanticTextSplitter semanticTextSplitter(
             EmbeddingModel embeddingModel,
-            @Value("${rag.semantic.breakpoint-percentile:95.0}") double breakpointPercentile) {
-        return new SemanticTextSplitter(embeddingModel, breakpointPercentile);
+            @Value("${rag.semantic.breakpoint-percentile:95.0}") double breakpointPercentile,
+            @Value("${rag.semantic.max-chunk-chars:4000}") int maxChunkChars) {
+        return new SemanticTextSplitter(embeddingModel, breakpointPercentile, maxChunkChars);
     }
 }

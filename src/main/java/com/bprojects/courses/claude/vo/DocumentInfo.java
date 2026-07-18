@@ -1,5 +1,9 @@
 package com.bprojects.courses.claude.vo;
 
-/** One document loaded into the RAG store: original filename, byte size, and how many chunks it produced. */
-public record DocumentInfo(String name, long size, long chunks) {
+/**
+ * One document loaded into the RAG store: generated id, original filename, byte size,
+ * how many chunks it produced, the chunking algorithm used, and the average tokens per chunk.
+ */
+public record DocumentInfo(String id, String name, long size, long chunks,
+                           String splitMethod, long avgTokensPerChunk) {
 }

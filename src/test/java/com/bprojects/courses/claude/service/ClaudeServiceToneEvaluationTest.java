@@ -46,9 +46,9 @@ class ClaudeServiceToneEvaluationTest {
         List<String> lowScores = new ArrayList<>();
         int totalScore = 0;
         for (EvalTask task : tasks) {
-            String response = claudeService.generateResponse(task.task(), 1024, null, null, tone);
+            String response = claudeService.generateResponse(task.task(), 1024, null, null, null, null, tone);
             int score = Grader.validate(task.type(), task.task(),response, task.criteria(),
-                    prompt -> claudeService.generateResponse(prompt, 1024, 0.0, null, null));
+                    prompt -> claudeService.generateResponse(prompt, 1024, 0.0, null, null, null, null));
             totalScore += score;
             System.out.printf("[%s][%s][%s] score=%d/10%n", tone, task.id(), task.type(), score);
             if (score < MIN_PASSING_SCORE) {

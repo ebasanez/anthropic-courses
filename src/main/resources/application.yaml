@@ -39,3 +39,4 @@ rag:
   splitter: TOKEN                          # default chunking strategy: TOKEN (fast) | SEMANTIC (embedding-based)
   semantic:
     breakpoint-percentile: 95.0            # SEMANTIC only: lower = more, smaller chunks
+    max-chunk-chars: 4000                  # SEMANTIC only: hard size cap per chunk (keeps chunks under the embedding token limit)
