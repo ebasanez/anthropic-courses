@@ -1,7 +1,8 @@
 package com.bprojects.courses.claude.controller;
 
+import com.bprojects.courses.claude.dto.ChatRequestInputDto;
+import com.bprojects.courses.claude.dto.ChatRequestWithMediaInputDto;
 import com.bprojects.courses.claude.service.ClaudeService;
-import com.bprojects.courses.claude.vo.Tone;
 import org.springframework.ai.anthropic.AnthropicCitationDocument;
 import org.springframework.ai.content.Media;
 import org.springframework.core.io.ByteArrayResource;
@@ -11,7 +12,6 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -35,56 +35,34 @@ public class ClaudeController {
 
     // Simple GET text generation
     @GetMapping("/chat")
-    public String chat(@RequestParam(value = "message") String message,
-                        @RequestParam(value = "maxTokens", required = false) Integer maxTokens,
-                        @RequestParam(value = "temperature", required = false) Double temperature,
-                        @RequestParam(value = "thinkingBudget", required = false) Integer thinkingBudget,
-                        @RequestParam(value = "ragDocumentIds", required = false) Set<String> ragDocumentIds,
-                        @RequestParam(value = "conversationId", required = false) String conversationId,
-                       @RequestParam(value = "tone", required = false) Tone tone) {
-        return claudeService.generateResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone);
+    public String chat(ChatRequestInputDto request) {
+        return claudeService.generateResponse(request.getMessage(), request.getMaxTokens(), request.getTemperature(),
+                request.getThinkingBudget(), request.getRagDocumentIds(), request.getConversationId(), request.getTone());
     }
 
     // Server-Sent Events (SSE) for real-time text streaming
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> stream(@RequestParam(value = "message") String message,
-                                @RequestParam(value = "maxTokens", required = false) Integer maxTokens,
-                                @RequestParam(value = "temperature", required = false) Double temperature,
-                                @RequestParam(value = "thinkingBudget", required = false) Integer thinkingBudget,
-                                @RequestParam(value = "ragDocumentIds", required = false) Set<String> ragDocumentIds,
-                                @RequestParam(value = "conversationId", required = false) String conversationId,
-                                @RequestParam(value = "tone", required = false) Tone tone) {
-        return claudeService.streamResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone);
+    public Flux<String> stream(ChatRequestInputDto request) {
+        return claudeService.streamResponse(request.getMessage(), request.getMaxTokens(), request.getTemperature(),
+                request.getThinkingBudget(), request.getRagDocumentIds(), request.getConversationId(), request.getTone());
     }
 
-    // Multipart POST variant: same params as GET plus optional image attachments (vision)
+    // Multipart POST variant: same params as GET plus optional file attachments (images + PDFs)
     @PostMapping(value = "/chat", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public String chatWithMedia(@RequestParam(value = "message") String message,
-                                 @RequestParam(value = "maxTokens", required = false) Integer maxTokens,
-                                 @RequestParam(value = "temperature", required = false) Double temperature,
-                                 @RequestParam(value = "thinkingBudget", required = false) Integer thinkingBudget,
-                                 @RequestParam(value = "ragDocumentIds", required = false) Set<String> ragDocumentIds,
-                                 @RequestParam(value = "conversationId", required = false) String conversationId,
-                                 @RequestParam(value = "tone", required = false) Tone tone,
-                                 @RequestParam(value = "media", required = false) MultipartFile[] media) {
-        Attachments att = toAttachments(media);
-        return claudeService.generateResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds,
-                conversationId, tone, att.media(), att.citationDocuments());
+    public String chatWithMedia(ChatRequestWithMediaInputDto request) {
+        Attachments att = toAttachments(request.getMedia());
+        return claudeService.generateResponse(request.getMessage(), request.getMaxTokens(), request.getTemperature(),
+                request.getThinkingBudget(), request.getRagDocumentIds(), request.getConversationId(), request.getTone(),
+                att.media(), att.citationDocuments());
     }
 
     @PostMapping(value = "/stream", consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> streamWithMedia(@RequestParam(value = "message") String message,
-                                         @RequestParam(value = "maxTokens", required = false) Integer maxTokens,
-                                         @RequestParam(value = "temperature", required = false) Double temperature,
-                                         @RequestParam(value = "thinkingBudget", required = false) Integer thinkingBudget,
-                                         @RequestParam(value = "ragDocumentIds", required = false) Set<String> ragDocumentIds,
-                                         @RequestParam(value = "conversationId", required = false) String conversationId,
-                                         @RequestParam(value = "tone", required = false) Tone tone,
-                                         @RequestParam(value = "media", required = false) MultipartFile[] media) {
-        Attachments att = toAttachments(media);
-        return claudeService.streamResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds,
-                conversationId, tone, att.media(), att.citationDocuments());
+    public Flux<String> streamWithMedia(ChatRequestWithMediaInputDto request) {
+        Attachments att = toAttachments(request.getMedia());
+        return claudeService.streamResponse(request.getMessage(), request.getMaxTokens(), request.getTemperature(),
+                request.getThinkingBudget(), request.getRagDocumentIds(), request.getConversationId(), request.getTone(),
+                att.media(), att.citationDocuments());
     }
 
     // Attachment formats Anthropic accepts: vision images + native PDF documents
