@@ -23,6 +23,11 @@ spring:
       chat:
         model: claude-sonnet-4-6
 
+anthropic:
+  cache:
+    # Prompt-cache strategy: NONE | TOOLS_ONLY | SYSTEM_ONLY | SYSTEM_AND_TOOLS | CONVERSATION_HISTORY
+    strategy: SYSTEM_AND_TOOLS
+
 server:
   tomcat:
     # don't reset the connection when rejecting an oversize upload -> client gets a clean error

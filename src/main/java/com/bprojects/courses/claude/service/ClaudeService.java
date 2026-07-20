@@ -3,6 +3,10 @@ package com.bprojects.courses.claude.service;
 import com.bprojects.courses.claude.tools.MyTools;
 import com.bprojects.courses.claude.vo.Tone;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ai.anthropic.AnthropicCacheOptions;
+import org.springframework.ai.anthropic.AnthropicCacheStrategy;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.anthropic.AnthropicCitationDocument;
 import org.springframework.ai.anthropic.AnthropicWebSearchTool;
@@ -11,8 +15,10 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.content.Media;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -25,23 +31,30 @@ import java.util.stream.Collectors;
 @Service
 public class ClaudeService {
 
+    private static final Logger log = LoggerFactory.getLogger(ClaudeService.class);
+
     private static final String NO_CODE_FENCES =
             " When sharing code, output it directly without markdown code fences (no triple backticks).";
 
     private final ChatClient chatClient;
     private final ToolsService toolsService;
-    // Present only when RAG is enabled. Attached per request (not as a default advisor) so a
+    // Present only when RAG is enabled. Attached per request (not as a default advisor), so a
     // request can skip it entirely — no vector-store query — when RAG is disabled for that call.
     @Nullable
     private final QuestionAnswerAdvisor ragAdvisor;
+    // Anthropic prompt-cache strategy. SYSTEM_AND_TOOLS caches the (per-tone) system prompt and
+    // the shared tool definitions; NONE disables caching. See application.yaml anthropic.cache.strategy.
+    private final AnthropicCacheStrategy cacheStrategy;
 
     // Inject the autoconfigured Builder. The QuestionAnswerAdvisor is only present
     // when RAG is enabled (rag.enabled=true) -> injected via ObjectProvider.
     public ClaudeService(ChatClient.Builder chatClientBuilder,
                          ToolsService toolsService,
-                         ObjectProvider<QuestionAnswerAdvisor> qaAdvisorProvider) {
+                         ObjectProvider<QuestionAnswerAdvisor> qaAdvisorProvider,
+                         @Value("${anthropic.cache.strategy:SYSTEM_AND_TOOLS}") AnthropicCacheStrategy cacheStrategy) {
         this.toolsService = toolsService;
         this.ragAdvisor = qaAdvisorProvider.getIfAvailable();
+        this.cacheStrategy = cacheStrategy;
         ChatMemory chatMemory = MessageWindowChatMemory.builder()
                 .maxMessages(20)
                 .build();
@@ -77,7 +90,9 @@ public class ClaudeService {
             @Nullable List<Media> media,
             @Nullable List<AnthropicCitationDocument> citationDocuments) {
         var spec = buildPromptSpec(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, media, citationDocuments);
-        return spec.call().content();
+        ChatResponse response = spec.call().chatResponse();
+        logCacheUsage(response);
+        return response.getResult().getOutput().getText();
     }
 
     // Streaming (reactive) call to Claude
@@ -105,7 +120,17 @@ public class ClaudeService {
             @Nullable List<Media> media,
             @Nullable List<AnthropicCitationDocument> citationDocuments) {
         var spec = buildPromptSpec(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, media, citationDocuments);
-        return spec.stream().content();
+        return spec.stream().chatResponse()
+                .doOnNext(cr -> {
+                    // Usage (with cache token counts) arrives on the final stream chunk.
+                    if (cr.getMetadata() != null && cr.getMetadata().getUsage() != null
+                            && cr.getMetadata().getUsage().getCacheReadInputTokens() != null) {
+                        logCacheUsage(cr);
+                    }
+                })
+                .map(cr -> cr.getResult() != null && cr.getResult().getOutput().getText() != null
+                        ? cr.getResult().getOutput().getText() : "")
+                .filter(text -> !text.isEmpty());
     }
 
     private ChatClient.ChatClientRequestSpec buildPromptSpec(
@@ -140,6 +165,13 @@ public class ClaudeService {
         }
 
         var optionsBuilder = AnthropicChatOptions.builder();
+        // Prompt caching: mark system prompt + tool definitions as cacheable so repeat
+        // requests read them at ~10% cost instead of resending full-price. TTL defaults to 5 min.
+        if (cacheStrategy != AnthropicCacheStrategy.NONE) {
+            optionsBuilder.cacheOptions(AnthropicCacheOptions.builder()
+                    .strategy(cacheStrategy)
+                    .build());
+        }
         // Attached PDFs ride along as citation documents so answers can cite pages.
         if (citationDocuments != null && !citationDocuments.isEmpty()) {
             optionsBuilder.citationDocuments(citationDocuments);
@@ -169,6 +201,20 @@ public class ClaudeService {
             spec = spec.system(getSystemPrompt(tone));
         }
         return spec;
+    }
+
+    /** Log Anthropic cache hit/write token counts so caching effectiveness is observable. */
+    private void logCacheUsage(@Nullable ChatResponse response) {
+        if (response == null || response.getMetadata() == null) {
+            return;
+        }
+        var usage = response.getMetadata().getUsage();
+        if (usage == null) {
+            return;
+        }
+        log.info("cache: read={} write={} prompt={} completion={}",
+                usage.getCacheReadInputTokens(), usage.getCacheWriteInputTokens(),
+                usage.getPromptTokens(), usage.getCompletionTokens());
     }
 
     /**
