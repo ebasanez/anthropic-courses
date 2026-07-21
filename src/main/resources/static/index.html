@@ -287,8 +287,8 @@
             <span class="cursor"></span>
         </div>
         <div class="row options-row">
-            <input type="file" id="chatImages" title="Attach images or PDFs for Claude to analyze"
-                   accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,.pdf" multiple>
+            <input type="file" id="chatImages" title="Attach images, PDFs, text files (csv, txt, md) or documents (doc, docx, ppt, pptx) for Claude to analyze"
+                   accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,.pdf,.csv,.txt,.md,.doc,.docx,.ppt,.pptx" multiple>
         </div>
         <div class="row options-row">
             <select id="maxTokens">
@@ -405,12 +405,13 @@
 
             const images = [...chatImagesInput.files];
             const userMsg = addMessage(message, 'user');
-            // Attachment preview in the user bubble: image thumbnail, or filename for PDFs.
+            // Attachment preview in the user bubble: image thumbnail, or filename for documents.
             images.forEach(f => {
-                if (f.type === 'application/pdf') {
+                if (!f.type.startsWith('image/')) {
+                    const ext = (f.name.split('.').pop() || 'file').toLowerCase();
                     const tag = document.createElement('div');
                     tag.className = 'msg-attachment';
-                    tag.textContent = '[pdf] ' + f.name;
+                    tag.textContent = '[' + ext + '] ' + f.name;
                     userMsg.appendChild(tag);
                     return;
                 }
