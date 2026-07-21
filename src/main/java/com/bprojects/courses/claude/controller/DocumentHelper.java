@@ -58,6 +58,49 @@ final class DocumentHelper {
     private static final String ALLOWED_DESCRIPTION =
             "images (jpeg, png, gif, webp), pdf, text (csv, txt, md), and office documents (doc, docx, ppt, pptx)";
 
+    // Formats worth handing to Claude's code-execution sandbox: data and documents it can load
+    // programmatically. Excel appears only here -- it has no inline path, so resolveKind()
+    // deliberately does not accept it.
+    static final Set<String> ANALYSIS_EXTENSIONS =
+            Set.of(".txt", ".csv", ".md", ".xls", ".xlsx", ".doc", ".docx", ".ppt", ".pptx");
+
+    private static final Set<String> ANALYSIS_TYPES = Set.of(
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+    /** True, when the upload is something, the code-execution sandbox can load and analyze. */
+    static boolean isAnalysable(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return false;
+        }
+        String contentType = file.getContentType();
+        if (contentType != null
+                && (SUPPORTED_TEXT_TYPES.contains(contentType)
+                || SUPPORTED_OFFICE_TYPES.contains(contentType)
+                || ANALYSIS_TYPES.contains(contentType))) {
+            return true;
+        }
+        String name = file.getOriginalFilename() != null
+                ? file.getOriginalFilename().toLowerCase(Locale.ROOT) : "";
+        return ANALYSIS_EXTENSIONS.stream().anyMatch(name::endsWith);
+    }
+
+    /**
+     * The file a "file analysis" request should run against. The checkbox in the UI is not a
+     * trust boundary, so this rejects requests that ask for analysis without a usable file.
+     */
+    static MultipartFile firstAnalysable(MultipartFile[] files) {
+        if (files != null) {
+            for (MultipartFile file : files) {
+                if (isAnalysable(file)) {
+                    return file;
+                }
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "File analysis requires an attached file of one of: " + ANALYSIS_EXTENSIONS);
+    }
+
     /** How an uploaded file is delivered to Claude. */
     private enum AttachmentKind { IMAGE, PDF, TEXT, OFFICE }
 

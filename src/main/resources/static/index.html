@@ -287,8 +287,8 @@
             <span class="cursor"></span>
         </div>
         <div class="row options-row">
-            <input type="file" id="chatImages" title="Attach images, PDFs, text files (csv, txt, md) or documents (doc, docx, ppt, pptx) for Claude to analyze"
-                   accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,.pdf,.csv,.txt,.md,.doc,.docx,.ppt,.pptx" multiple>
+            <input type="file" id="chatImages" title="Attach images, PDFs, text files (csv, txt, md), documents (doc, docx, ppt, pptx) or spreadsheets (xls, xlsx) for Claude to analyze"
+                   accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,.pdf,.csv,.txt,.md,.doc,.docx,.ppt,.pptx,.xls,.xlsx" multiple>
         </div>
         <div class="row options-row">
             <select id="maxTokens">
@@ -319,6 +319,8 @@
                 <option value="8192">Think 8k</option>
             </select>
             <label class="check-label"><input type="checkbox" id="streamMode"> Stream mode</label>
+            <label class="check-label" title="Run the attached data file through Claude's code execution sandbox">
+                <input type="checkbox" id="fileAnalysis"> Enable file analysis</label>
         </div>
     </form>
     </div>
@@ -356,6 +358,19 @@
         const resetBtn = document.getElementById('reset');
         const streamModeInput = document.getElementById('streamMode');
         const chatImagesInput = document.getElementById('chatImages');
+        const fileAnalysisInput = document.getElementById('fileAnalysis');
+
+        // Formats the code-execution sandbox can load. Mirrors DocumentHelper.ANALYSIS_EXTENSIONS.
+        const ANALYSIS_EXTENSIONS = ['.txt', '.csv', '.md', '.xls', '.xlsx', '.doc', '.docx', '.ppt', '.pptx'];
+        const isAnalysable = f => ANALYSIS_EXTENSIONS.some(ext => f.name.toLowerCase().endsWith(ext));
+
+        // Keep the checkbox honest: it only makes sense while an analysable file is selected.
+        chatImagesInput.addEventListener('change', () => {
+            const ok = [...chatImagesInput.files].some(isAnalysable);
+            if (!ok) fileAnalysisInput.checked = false;
+            fileAnalysisInput.disabled = !ok;
+        });
+        fileAnalysisInput.disabled = true;
 
         let conversationId = sessionStorage.getItem('conversationId');
         if (!conversationId) {
@@ -404,6 +419,13 @@
             if (!message) return;
 
             const images = [...chatImagesInput.files];
+            // File analysis needs a file the sandbox can actually load -- block the send rather
+            // than letting the server reject it, so the typed message is not lost.
+            if (fileAnalysisInput.checked && !images.some(isAnalysable)) {
+                addMessage('File analysis needs an attached ' + ANALYSIS_EXTENSIONS.join(', ') + ' file.', 'error');
+                return;
+            }
+
             const userMsg = addMessage(message, 'user');
             // Attachment preview in the user bubble: image thumbnail, or filename for documents.
             images.forEach(f => {
@@ -458,6 +480,7 @@
                     const data = new FormData();
                     params.forEach((v, k) => data.append(k, v));
                     images.forEach(f => data.append('media', f));
+                    if (fileAnalysisInput.checked) data.append('fileAnalysis', 'true');
                     opts = { method: 'POST', body: data };
                 } else {
                     url += '?' + params.toString();
@@ -475,6 +498,8 @@
                 pending.textContent = err.message;
             } finally {
                 chatImagesInput.value = '';
+                fileAnalysisInput.checked = false;
+                fileAnalysisInput.disabled = true;   // no file selected any more
                 sendBtn.disabled = false;
                 input.focus();
             }

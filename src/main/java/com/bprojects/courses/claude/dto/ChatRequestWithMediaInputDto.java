@@ -13,6 +13,12 @@ public class ChatRequestWithMediaInputDto extends ChatRequestInputDto {
     @Nullable
     private MultipartFile[] media;
 
+    /**
+     * When true, one attached data file is analysed by Claude's code-execution sandbox
+     * (uploaded via the Files API) and the findings are fed into the chat request.
+     */
+    private boolean fileAnalysis;
+
     @Nullable
     public MultipartFile[] getMedia() {
         return media;
@@ -20,5 +26,13 @@ public class ChatRequestWithMediaInputDto extends ChatRequestInputDto {
 
     public void setMedia(@Nullable MultipartFile[] media) {
         this.media = media;
+    }
+
+    public boolean isFileAnalysis() {
+        return fileAnalysis;
+    }
+
+    public void setFileAnalysis(boolean fileAnalysis) {
+        this.fileAnalysis = fileAnalysis;
     }
 }
