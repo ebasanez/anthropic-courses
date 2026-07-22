@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: spring-ai-claude-demo
+  autoconfigure:
+    # No datasource in tests: the pgvector starter's JDBC + vector-store autoconfig would fail.
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
+  docker:
+    compose:
+      enabled: false                     # tests never start containers
+  ai:
+    model:
+      chat: anthropic                    # Claude is the only ChatModel (Ollama chat autoconfig backs off)
+      embedding: none                    # no embeddings in tests -> no Ollama embedding model
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        model: claude-sonnet-4-6

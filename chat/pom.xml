@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.bprojects.courses</groupId>
+		<artifactId>claude-parent</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>chat</artifactId>
+	<name>chat</name>
+	<description>Spring AI Claude chat application</description>
+
+	<!-- All dependencies are declared in the parent pom and inherited. -->
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<!-- Working directory defaults to ${project.basedir} (chat/), which is where
+					 compose.yaml and ./workspace live. IDE run configs must match it. -->
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

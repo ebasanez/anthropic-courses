@@ -10,8 +10,15 @@
 		<relativePath/>
 	</parent>
 	<groupId>com.bprojects.courses</groupId>
-	<artifactId>claude</artifactId>
+	<artifactId>claude-parent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>claude-parent</name>
+	<description>Parent aggregator for the Anthropic courses project</description>
+
+	<modules>
+		<module>chat</module>
+	</modules>
 
 	<properties>
 		<java.version>25</java.version>
@@ -30,6 +37,7 @@
 		</dependencies>
 	</dependencyManagement>
 
+	<!-- Dependencies declared here are inherited by every module. -->
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -79,14 +87,15 @@
 		</dependency>
 	</dependencies>
 
-
 	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-maven-plugin</artifactId>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 
 </project>
