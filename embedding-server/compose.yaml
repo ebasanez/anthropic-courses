@@ -1,3 +1,8 @@
+# Pinned project name: volumes stay 'anthropic-courses_*' regardless of which
+# directory the file lives in, so the pulled embed model and the ingested
+# vectors survive moving this file between modules.
+name: anthropic-courses
+
 services:
   ollama:
     image: ollama/ollama:latest

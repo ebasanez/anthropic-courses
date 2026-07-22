@@ -2,8 +2,9 @@ spring:
   application:
     name: spring-ai-claude-demo
   autoconfigure:
-    # pgvector starter puts a JDBC driver + vector-store autoconfig on the classpath;
-    # without a datasource (default profile) both fail. Off unless rag is on.
+    # The pgvector starter is inherited from the parent pom and puts a JDBC driver +
+    # vector-store autoconfig on the classpath. This module never owns a vector store
+    # (embedding-server does), so both stay off in every profile.
     exclude:
       - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
       - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
@@ -13,11 +14,11 @@ spring:
       max-request-size: 200MB            # total request (all files combined)
   docker:
     compose:
-      enabled: false                     # default: no Ollama container
+      enabled: false                     # containers belong to embedding-server
   ai:
     model:
       chat: anthropic                    # Claude stays the chat model
-      embedding: none                    # default: NO embeddings -> Ollama autoconfig backs off
+      embedding: none                    # embeddings are the embedding-server's job
     anthropic:
       api-key: ${ANTHROPIC_API_KEY}
       chat:
@@ -40,8 +41,9 @@ tools:
     text-editor:
         enabled: false
 
-rag:
-  splitter: TOKEN                          # default chunking strategy: TOKEN (fast) | SEMANTIC (embedding-based)
-  semantic:
-    breakpoint-percentile: 95.0            # SEMANTIC only: lower = more, smaller chunks
-    max-chunk-chars: 4000                  # SEMANTIC only: hard size cap per chunk (keeps chunks under the embedding token limit)
+embedding:
+  server:
+    # Where the embedding-server module listens. Used under the rag profile for both
+    # retrieval (QuestionAnswerAdvisor) and document upload/list/delete proxying.
+    # Chunking options (rag.splitter, rag.semantic.*) are configured over there.
+    base-url: http://localhost:8081

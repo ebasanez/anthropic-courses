@@ -1,8 +1,8 @@
-package com.bprojects.courses.claude.service;
+package com.bprojects.courses.embedding.service;
 
-import com.bprojects.courses.claude.rag.SemanticTextSplitter;
-import com.bprojects.courses.claude.vo.DocumentInfo;
-import com.bprojects.courses.claude.vo.RagSplitMethod;
+import com.bprojects.courses.embedding.rag.SemanticTextSplitter;
+import com.bprojects.courses.embedding.vo.DocumentInfo;
+import com.bprojects.courses.embedding.vo.RagSplitMethod;
 // Vector store is the pgvector-autoconfigured PgVectorStore (Postgres-backed, persistent).
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
@@ -12,7 +12,6 @@ import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,10 +25,8 @@ import java.util.UUID;
 /**
  * Ingests uploaded documents into the vector store. Tika auto-detects the
  * format, so plain text, PDF, and Markdown all go through one path.
- * Active only under the {@code rag} profile.
  */
 @Service
-@Profile("rag")
 public class DocumentIngestionService {
 
     private final VectorStore vectorStore;

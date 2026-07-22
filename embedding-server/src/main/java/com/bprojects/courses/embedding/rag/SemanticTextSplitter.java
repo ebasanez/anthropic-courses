@@ -1,4 +1,4 @@
-package com.bprojects.courses.claude.rag;
+package com.bprojects.courses.embedding.rag;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;

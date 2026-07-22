@@ -1,0 +1,49 @@
+# Embedding server: Ollama (embeddings only) + pgvector store, exposed over HTTP.
+# Runs on its own port; the chat application talks to it through /api/embeddings/**.
+
+server:
+  port: 8081
+  tomcat:
+    # don't reset the connection when rejecting an oversize upload -> client gets a clean error
+    max-swallow-size: -1
+
+spring:
+  application:
+    name: embedding-server
+  docker:
+    compose:
+      enabled: true                      # Boot auto-starts the Ollama + pgvector containers
+  http:
+    clients:
+      read-timeout: 5m                   # Ollama embedding of many sentences (semantic) can be slow
+      connect-timeout: 30s
+  servlet:
+    multipart:
+      max-file-size: 100MB               # per single file
+      max-request-size: 200MB            # total request (all files combined)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ragdb
+    username: postgres
+    password: postgres
+  ai:
+    model:
+      chat: none                         # no chat model here — embeddings only
+      embedding: ollama                  # Ollama serves ONLY embeddings
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        model: nomic-embed-text
+      init:
+        pull-model-strategy: when_missing   # the first run pulls the embed model
+    vectorstore:
+      pgvector:
+        initialize-schema: true          # CREATE ... IF NOT EXISTS — idempotent, keeps rows
+        dimensions: 768                  # must match nomic-embed-text
+        index-type: hnsw
+        distance-type: cosine_distance
+
+rag:
+  splitter: TOKEN                          # default chunking strategy: TOKEN (fast) | SEMANTIC (embedding-based)
+  semantic:
+    breakpoint-percentile: 95.0            # SEMANTIC only: lower = more, smaller chunks
+    max-chunk-chars: 4000                  # SEMANTIC only: hard size cap per chunk (keeps chunks under the embedding token limit)

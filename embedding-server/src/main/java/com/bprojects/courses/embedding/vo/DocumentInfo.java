@@ -1,4 +1,4 @@
-package com.bprojects.courses.claude.vo;
+package com.bprojects.courses.embedding.vo;
 
 /**
  * One document loaded into the RAG store: generated id, original filename, byte size,

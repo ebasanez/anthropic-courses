@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.bprojects.courses</groupId>
+		<artifactId>claude-parent</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>embedding-server</artifactId>
+	<name>embedding-server</name>
+	<description>Embedding + vector store server: document ingestion and similarity search over pgvector</description>
+
+	<!-- All dependencies are declared in the parent pom and inherited. -->
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<!-- Working directory defaults to ${project.basedir}, where compose.yaml lives. -->
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

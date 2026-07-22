@@ -18,6 +18,7 @@
 
 	<modules>
 		<module>chat</module>
+		<module>embedding-server</module>
 	</modules>
 
 	<properties>
