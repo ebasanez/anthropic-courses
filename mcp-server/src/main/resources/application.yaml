@@ -1,0 +1,32 @@
+# MCP server: publishes this project's tools over streamable HTTP.
+# Owns no model and no database of its own.
+
+server:
+  port: 8082
+
+spring:
+  application:
+    name: mcp-server
+  autoconfigure:
+    # The pgvector starter is inherited from the parent pom; this module never
+    # touches a database, so its JDBC + vector-store autoconfig stays off.
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
+  docker:
+    compose:
+      enabled: false                     # containers belong to embedding-server
+  ai:
+    model:
+      chat: none                         # no chat model -> no ANTHROPIC_API_KEY needed here
+      embedding: none                    # embeddings are the embedding-server's job
+    mcp:
+      server:
+        name: anthropic-courses-tools
+        version: 0.0.1
+        protocol: streamable             # streamable HTTP transport at /mcp
+        instructions: >
+          Utility tools exposed by the anthropic-courses project. Currently: add, which
+          returns the sum of two numbers.
+        streamable-http:
+          mcp-endpoint: /mcp

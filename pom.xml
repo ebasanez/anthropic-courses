@@ -19,6 +19,7 @@
 	<modules>
 		<module>chat</module>
 		<module>embedding-server</module>
+		<module>mcp-server</module>
 	</modules>
 
 	<properties>
@@ -79,6 +80,12 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-docker-compose</artifactId>
 			<optional>true</optional>
+		</dependency>
+
+		<!-- MCP: servlet-based MCP server (only mcp-server enables it; see spring.ai.mcp.server.enabled) -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
 		</dependency>
 
 		<dependency>

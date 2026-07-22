@@ -23,6 +23,9 @@ spring:
       api-key: ${ANTHROPIC_API_KEY}
       chat:
         model: claude-sonnet-4-6
+    mcp:
+      server:
+        enabled: false                   # the MCP starter is inherited; only mcp-server serves it
 
 anthropic:
   cache:
