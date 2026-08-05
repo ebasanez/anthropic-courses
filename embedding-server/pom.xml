@@ -14,7 +14,44 @@
 	<name>embedding-server</name>
 	<description>Embedding + vector store server: document ingestion and similarity search over pgvector</description>
 
-	<!-- All dependencies are declared in the parent pom and inherited. -->
+	<!-- Versions come from the parent's dependencyManagement; declare artifacts only. -->
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<!-- The embedding model this module owns (chat autoconfig off via spring.ai.model.chat) -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-model-ollama</artifactId>
+		</dependency>
+
+		<!-- The pgvector store this module owns: autoconfigures PgVectorStore + its DataSource -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
+		</dependency>
+
+		<!-- Ingestion: Tika reader (text / PDF / MD / DOCX / HTML) -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-tika-document-reader</artifactId>
+		</dependency>
+
+		<!-- Boot auto-starts the Ollama + pgvector containers from this module's compose.yaml -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-docker-compose</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 
 	<build>
 		<plugins>

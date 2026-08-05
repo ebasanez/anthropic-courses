@@ -1,0 +1,24 @@
+# MCP client, active only under the `mcp` profile:
+#   ./mvnw -pl chat spring-boot:run -Dspring-boot.run.profiles=mcp
+#
+# The starter is on the classpath unconditionally, but it only dials out when a connection
+# is configured — which happens here. Without this profile the chat app has no runtime
+# dependency on mcp-server, and mcp-server being down cannot stop chat from starting.
+#
+# Combine with rag when both are wanted: -Dspring-boot.run.profiles=rag,mcp
+
+spring:
+  ai:
+    mcp:
+      client:
+        name: chat-mcp-client
+        request-timeout: 30s
+        type: SYNC                         # matches ClaudeService's blocking + streaming use
+        toolcallback:
+          enabled: true                    # publish the remote tools as ToolCallback beans
+        streamable-http:
+          connections:
+            # Must match mcp-server: port 8082, endpoint /mcp (its spring.ai.mcp.server config).
+            anthropic-courses-tools:
+              url: http://localhost:8082
+              endpoint: /mcp

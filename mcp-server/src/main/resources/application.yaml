@@ -7,19 +7,10 @@ server:
 spring:
   application:
     name: mcp-server
-  autoconfigure:
-    # The pgvector starter is inherited from the parent pom; this module never
-    # touches a database, so its JDBC + vector-store autoconfig stays off.
-    exclude:
-      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
-      - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
-  docker:
-    compose:
-      enabled: false                     # containers belong to embedding-server
+  # No autoconfigure excludes and no spring.ai.model.*=none guards: this module's pom
+  # declares only the MCP starter, so no datasource, vector store, chat model or
+  # embedding model autoconfiguration is on the classpath to begin with.
   ai:
-    model:
-      chat: none                         # no chat model -> no ANTHROPIC_API_KEY needed here
-      embedding: none                    # embeddings are the embedding-server's job
     mcp:
       server:
         name: anthropic-courses-tools
@@ -27,6 +18,8 @@ spring:
         protocol: streamable             # streamable HTTP transport at /mcp
         instructions: >
           Utility tools exposed by the anthropic-courses project. Currently: add, which
-          returns the sum of two numbers.
+          returns the sum of two numbers. Resources publish this module's documents
+          (src/main/resources/docs): read docs://mcp-server for the list of document
+          URIs, then read one of them for its contents.
         streamable-http:
           mcp-endpoint: /mcp

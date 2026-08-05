@@ -17,6 +17,7 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.content.Media;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,8 @@ public class ClaudeService {
 
     private final ChatClient chatClient;
     private final ToolsService toolsService;
+    // Resolves @-references to MCP resources in the user's message; inert without the `mcp` profile.
+    private final McpResourceService mcpResourceService;
     // Present only when RAG is enabled. Attached per request (not as a default advisor), so a
     // request can skip it entirely — no vector-store query — when RAG is disabled for that call.
     @Nullable
@@ -50,9 +53,11 @@ public class ClaudeService {
     // when RAG is enabled (rag.enabled=true) -> injected via ObjectProvider.
     public ClaudeService(ChatClient.Builder chatClientBuilder,
                          ToolsService toolsService,
+                         McpResourceService mcpResourceService,
                          ObjectProvider<QuestionAnswerAdvisor> qaAdvisorProvider,
                          @Value("${anthropic.cache.strategy:SYSTEM_AND_TOOLS}") AnthropicCacheStrategy cacheStrategy) {
         this.toolsService = toolsService;
+        this.mcpResourceService = mcpResourceService;
         this.ragAdvisor = qaAdvisorProvider.getIfAvailable();
         this.cacheStrategy = cacheStrategy;
         ChatMemory chatMemory = MessageWindowChatMemory.builder()
@@ -148,9 +153,12 @@ public class ClaudeService {
             conversationId = UUID.randomUUID().toString();
         }
         final String finalConversationId = Optional.ofNullable(conversationId).orElse(String.valueOf(UUID.randomUUID()));
+        // @docs://... references in the user's text are resolved against the connected MCP
+        // servers and their content prepended. A no-op without the `mcp` profile.
+        final String userText = mcpResourceService.expandReferences(message);
         var spec = this.chatClient.prompt()
                 .user(u -> {
-                    u.text(message);
+                    u.text(userText);
                     if (media != null) {
                         media.forEach(u::media);
                     }
@@ -162,6 +170,13 @@ public class ClaudeService {
         List<MyTools> activeTools = toolsService.getEnabledTools();
         if (activeTools != null && !activeTools.isEmpty()) {
             spec = spec.tools(activeTools.toArray());
+        }
+
+        // Tools published by mcp-server, present only under the `mcp` profile. They are
+        // ToolCallbacks rather than annotated beans, so they attach through a separate call.
+        ToolCallback[] mcpTools = toolsService.getMcpToolCallbacks();
+        if (mcpTools.length > 0) {
+            spec = spec.toolCallbacks(mcpTools);
         }
 
         var optionsBuilder = AnthropicChatOptions.builder();

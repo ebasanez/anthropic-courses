@@ -1,31 +1,20 @@
 spring:
   application:
     name: spring-ai-claude-demo
-  autoconfigure:
-    # The pgvector starter is inherited from the parent pom and puts a JDBC driver +
-    # vector-store autoconfig on the classpath. This module never owns a vector store
-    # (embedding-server does), so both stay off in every profile.
-    exclude:
-      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
-      - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
+  # No autoconfigure excludes: this module's pom declares the VectorStore SPI but no
+  # store implementation, so there is no JDBC driver or pgvector autoconfiguration to
+  # switch off. Retrieval goes through EmbeddingServerVectorStore over HTTP.
   servlet:
     multipart:
       max-file-size: 100MB               # per single file
       max-request-size: 200MB            # total request (all files combined)
-  docker:
-    compose:
-      enabled: false                     # containers belong to embedding-server
   ai:
     model:
       chat: anthropic                    # Claude stays the chat model
-      embedding: none                    # embeddings are the embedding-server's job
     anthropic:
       api-key: ${ANTHROPIC_API_KEY}
       chat:
         model: claude-sonnet-4-6
-    mcp:
-      server:
-        enabled: false                   # the MCP starter is inherited; only mcp-server serves it
 
 anthropic:
   cache:

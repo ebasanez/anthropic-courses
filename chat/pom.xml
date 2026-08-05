@@ -14,7 +14,84 @@
 	<name>chat</name>
 	<description>Spring AI Claude chat application</description>
 
-	<!-- All dependencies are declared in the parent pom and inherited. -->
+	<!-- Versions come from the parent's dependencyManagement; declare artifacts only. -->
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<!-- RestClient.Builder autoconfiguration. spring-boot-starter-web does not pull this in
+			 on its own; RagConfig and RagController need it to reach the embedding server. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-restclient</artifactId>
+		</dependency>
+
+		<!-- Claude chat client, tools and the ChatClient API -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-model-anthropic</artifactId>
+		</dependency>
+
+		<!-- Anthropic Java SDK: used directly for the Files API and code execution
+			 (FileAnalysisService), beyond what the Spring AI ChatClient exposes. -->
+		<dependency>
+			<groupId>com.anthropic</groupId>
+			<artifactId>anthropic-java-core</artifactId>
+		</dependency>
+
+		<!-- The SDK's HTTP stack, used directly by ModelLoggingConfig's request interceptor. -->
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>okhttp</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.squareup.okio</groupId>
+			<artifactId>okio</artifactId>
+		</dependency>
+
+		<!-- MCP client (mcp profile): consumes the tools mcp-server publishes at /mcp.
+			 Connections are configured in application-mcp.yaml, so without that profile the
+			 starter is inert and this app has no runtime dependency on mcp-server. -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-mcp-client</artifactId>
+		</dependency>
+
+		<!-- McpSyncClient and McpSchema, used directly by McpResourceService to read
+			 resources. Only a transitive of the starter, so declared explicitly. -->
+		<dependency>
+			<groupId>io.modelcontextprotocol.sdk</groupId>
+			<artifactId>mcp-core</artifactId>
+		</dependency>
+
+		<!-- RAG (rag profile): QuestionAnswerAdvisor retrieves through EmbeddingServerVectorStore -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-vector-store-advisor</artifactId>
+		</dependency>
+
+		<!-- RAG: the VectorStore SPI and filter DSL that EmbeddingServerVectorStore implements.
+			 This module owns no store implementation - see the autoconfigure excludes in
+			 application.yaml - so the SPI is declared on its own rather than via a store starter. -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-vector-store</artifactId>
+		</dependency>
+
+		<!-- File upload analysis: Tika reader (text / PDF / MD / DOCX / HTML) -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-tika-document-reader</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 
 	<build>
 		<plugins>

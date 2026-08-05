@@ -1,5 +1,6 @@
 package com.bprojects.courses.claude.controller;
 
+import com.bprojects.courses.claude.service.McpResourceService;
 import com.bprojects.courses.claude.service.ToolsService;
 import com.bprojects.courses.claude.vo.ToolDefinitionsVO;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,11 +17,22 @@ import java.util.Map;
 public class ConfigController {
 
     private final ToolsService toolsService;
+    private final McpResourceService mcpResourceService;
     private final ObjectMapper objectMapper;
 
-    public ConfigController(ToolsService toolsService, ObjectMapper objectMapper) {
+    public ConfigController(ToolsService toolsService, McpResourceService mcpResourceService,
+                            ObjectMapper objectMapper) {
         this.toolsService = toolsService;
+        this.mcpResourceService = mcpResourceService;
         this.objectMapper = objectMapper;
+    }
+
+    // URIs of the MCP resources that can be referenced from the chat input as @<uri>.
+    // Empty without the `mcp` profile.
+    @GetMapping("/resources")
+    public Map<String, Object> resources() {
+        return Map.of("referenceSyntax", "@<uri>",
+                "uris", mcpResourceService.listResourceUris());
     }
 
     // Schemas of all registered tools

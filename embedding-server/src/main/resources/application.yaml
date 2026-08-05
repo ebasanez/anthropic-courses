@@ -27,7 +27,7 @@ spring:
     password: postgres
   ai:
     model:
-      chat: none                         # no chat model here — embeddings only
+      # No chat: none guard needed — this module's pom declares no chat-model starter.
       embedding: ollama                  # Ollama serves ONLY embeddings
     ollama:
       base-url: http://localhost:11434
@@ -35,9 +35,6 @@ spring:
         model: nomic-embed-text
       init:
         pull-model-strategy: when_missing   # the first run pulls the embed model
-    mcp:
-      server:
-        enabled: false                   # the MCP starter is inherited; only mcp-server serves it
     vectorstore:
       pgvector:
         initialize-schema: true          # CREATE ... IF NOT EXISTS — idempotent, keeps rows

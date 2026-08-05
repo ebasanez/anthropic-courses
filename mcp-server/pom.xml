@@ -14,7 +14,39 @@
 	<name>mcp-server</name>
 	<description>MCP server exposing the project's document knowledge base as MCP tools</description>
 
-	<!-- All dependencies are declared in the parent pom and inherited. -->
+	<!-- Versions come from the parent's dependencyManagement; declare artifacts only. -->
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<!-- Servlet-based MCP server: publishes tools and resources at /mcp -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+		</dependency>
+
+		<!-- @McpResource, scanned by McpServerAnnotationScannerAutoConfiguration. Only a
+			 transitive of the starter, but DocsResources imports it directly. -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-mcp-annotations</artifactId>
+		</dependency>
+
+		<!-- McpSchema.{Text,Blob}ResourceContents, returned by DocsResources. Likewise a
+			 transitive of the starter that this module imports directly. -->
+		<dependency>
+			<groupId>io.modelcontextprotocol.sdk</groupId>
+			<artifactId>mcp-core</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 
 	<build>
 		<plugins>
