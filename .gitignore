@@ -34,3 +34,6 @@ replay_pid*
 
 # Compiled resources
 target/
+
+# AI local files
+graphify-out/cache/

@@ -1,4 +1,4 @@
-package com.bprojects.courses.claude.dto;
+package com.bprojects.courses.claude.controller.dto;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.web.multipart.MultipartFile;

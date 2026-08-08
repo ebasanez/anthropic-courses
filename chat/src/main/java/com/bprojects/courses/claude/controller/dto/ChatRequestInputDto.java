@@ -1,4 +1,4 @@
-package com.bprojects.courses.claude.dto;
+package com.bprojects.courses.claude.controller.dto;
 
 import com.bprojects.courses.claude.vo.Tone;
 import org.jspecify.annotations.Nullable;

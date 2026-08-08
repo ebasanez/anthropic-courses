@@ -1,33 +1,23 @@
 package com.bprojects.courses.claude.service;
 
+import com.bprojects.courses.claude.ChatRequestVO;
 import com.bprojects.courses.claude.tools.MyTools;
 import com.bprojects.courses.claude.vo.Tone;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.anthropic.AnthropicCacheOptions;
-import org.springframework.ai.anthropic.AnthropicCacheStrategy;
-import org.springframework.ai.anthropic.AnthropicChatOptions;
-import org.springframework.ai.anthropic.AnthropicCitationDocument;
-import org.springframework.ai.anthropic.AnthropicWebSearchTool;
+import org.springframework.ai.anthropic.*;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
-import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.content.Media;
 import org.springframework.ai.tool.ToolCallback;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
 
 @Service
 public class ClaudeService {
@@ -41,95 +31,55 @@ public class ClaudeService {
     private final ToolsService toolsService;
     // Resolves @-references to MCP resources in the user's message; inert without the `mcp` profile.
     private final McpResourceService mcpResourceService;
-    // Present only when RAG is enabled. Attached per request (not as a default advisor), so a
-    // request can skip it entirely — no vector-store query — when RAG is disabled for that call.
-    @Nullable
-    private final QuestionAnswerAdvisor ragAdvisor;
     // Anthropic prompt-cache strategy. SYSTEM_AND_TOOLS caches the (per-tone) system prompt and
     // the shared tool definitions; NONE disables caching. See application.yaml anthropic.cache.strategy.
     private final AnthropicCacheStrategy cacheStrategy;
 
-    // Inject the autoconfigured Builder. The QuestionAnswerAdvisor is only present
-    // when RAG is enabled (rag.enabled=true) -> injected via ObjectProvider.
+    private final List<SpecAdvisorFactoryService> advisorServices;
+
+    // Inject the autoconfigured Builder. Advisors come from the SpecAdvisorFactoryService beans
+    // present in the context: their generateAdvisors() results become default advisors (applied to
+    // every request), while advise(request) contributes per-request ones. RAG-specific wiring lives
+    // in RagAdvisorFactoryService, which exists only under the `rag` profile (see RagConfig).
     public ClaudeService(ChatClient.Builder chatClientBuilder,
                          ToolsService toolsService,
                          McpResourceService mcpResourceService,
-                         ObjectProvider<QuestionAnswerAdvisor> qaAdvisorProvider,
-                         @Value("${anthropic.cache.strategy:SYSTEM_AND_TOOLS}") AnthropicCacheStrategy cacheStrategy) {
+                         List<SpecAdvisorFactoryService> advisorServices,
+                         @Value("${anthropic.cache.strategy:SYSTEM_AND_TOOLS}") AnthropicCacheStrategy cacheStrategy ) {
         this.toolsService = toolsService;
         this.mcpResourceService = mcpResourceService;
-        this.ragAdvisor = qaAdvisorProvider.getIfAvailable();
         this.cacheStrategy = cacheStrategy;
-        ChatMemory chatMemory = MessageWindowChatMemory.builder()
-                .maxMessages(20)
-                .build();
+        this.advisorServices = advisorServices;
 
         this.chatClient = chatClientBuilder
                 .defaultSystem("You are a witty, helpful AI assistant." + NO_CODE_FENCES)
-                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+                .defaultAdvisors(advisorServices.stream().map(SpecAdvisorFactoryService::generateAdvisors).flatMap(List::stream).toList())
                 .build();
     }
 
-    // Synchronous (blocking) call to Claude
-    public String generateResponse(
-            String message,
-            Integer maxTokens,
-            @Nullable Double temperature,
-            @Nullable Integer thinkingBudget,
-            @Nullable Set<String> ragDocumentIds,
-            @Nullable String conversationId,
-            @Nullable Tone tone) {
-        return generateResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, null, null);
-    }
-
-    // Synchronous (blocking) call to Claude, optionally with attached images (vision)
-    // and PDF documents (sent as citation documents, citations enabled).
-    public String generateResponse(
-            String message,
-            Integer maxTokens,
-            @Nullable Double temperature,
-            @Nullable Integer thinkingBudget,
-            @Nullable Set<String> ragDocumentIds,
-            @Nullable String conversationId,
-            @Nullable Tone tone,
-            @Nullable List<Media> media,
-            @Nullable List<AnthropicCitationDocument> citationDocuments) {
-        var spec = buildPromptSpec(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, media, citationDocuments);
+    // Synchronous (blocking) call to Claude. Attachments on the request (images for vision,
+    // PDFs sent as citation documents with citations enabled) are optional.
+    public String generateResponse(ChatRequestVO request) {
+        var spec = buildPromptSpec(request);
         ChatResponse response = spec.call().chatResponse();
         logCacheUsage(response);
-        return response.getResult().getOutput().getText();
+        // A response with no generation (filtered/aborted turn) carries no text.
+        if (response == null || response.getResult() == null) {
+            return "";
+        }
+        String text = response.getResult().getOutput().getText();
+        return text != null ? text : "";
     }
 
-    // Streaming (reactive) call to Claude
-    public Flux<String> streamResponse(
-            String message,
-            Integer maxTokens,
-            @Nullable Double temperature,
-            @Nullable Integer thinkingBudget,
-            @Nullable Set<String> ragDocumentIds,
-            @Nullable String conversationId,
-            @Nullable Tone tone) {
-        return streamResponse(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, null, null);
-    }
-
-    // Streaming (reactive) call to Claude, optionally with attached images (vision)
-    // and PDF documents (sent as citation documents, citations enabled).
-    public Flux<String> streamResponse(
-            String message,
-            Integer maxTokens,
-            @Nullable Double temperature,
-            @Nullable Integer thinkingBudget,
-            @Nullable Set<String> ragDocumentIds,
-            @Nullable String conversationId,
-            @Nullable Tone tone,
-            @Nullable List<Media> media,
-            @Nullable List<AnthropicCitationDocument> citationDocuments) {
-        var spec = buildPromptSpec(message, maxTokens, temperature, thinkingBudget, ragDocumentIds, conversationId, tone, media, citationDocuments);
+    // Streaming (reactive) call to Claude. Attachments on the request (images for vision,
+    // PDFs sent as citation documents with citations enabled) are optional.
+    public Flux<String> streamResponse(ChatRequestVO request) {
+        var spec = buildPromptSpec(request);
         return spec.stream().chatResponse()
                 .doOnNext(cr -> {
-                    // Usage (with cache token counts) arrives on the final stream chunk.
-                    if (cr.getMetadata() != null && cr.getMetadata().getUsage() != null
-                            && cr.getMetadata().getUsage().getCacheReadInputTokens() != null) {
+                    // Usage (with cache token counts) arrives on the final stream chunk;
+                    // earlier chunks carry an EmptyUsage with no cache counters.
+                    if (cr.getMetadata().getUsage().getCacheReadInputTokens() != null) {
                         logCacheUsage(cr);
                     }
                 })
@@ -138,34 +88,28 @@ public class ClaudeService {
                 .filter(text -> !text.isEmpty());
     }
 
-    private ChatClient.ChatClientRequestSpec buildPromptSpec(
-            String message,
-            Integer maxTokens,
-            @Nullable Double temperature,
-            @Nullable Integer thinkingBudget,
-            @Nullable Set<String> ragDocumentIds,
-            @Nullable String conversationId,
-            @Nullable Tone tone,
-            @Nullable List<Media> media,
-            @Nullable List<AnthropicCitationDocument> citationDocuments) {
+    private List<Consumer<ChatClient.AdvisorSpec>> getAllAdvisorsToApply(ChatRequestVO request){
+        return advisorServices.stream().map(a->a.advise(request)).flatMap(Collection::stream).toList();
+    }
 
-        if (conversationId == null) {
-            conversationId = UUID.randomUUID().toString();
-        }
-        final String finalConversationId = Optional.ofNullable(conversationId).orElse(String.valueOf(UUID.randomUUID()));
+
+    private ChatClient.ChatClientRequestSpec buildPromptSpec(ChatRequestVO request) {
+
+
         // @docs://... references in the user's text are resolved against the connected MCP
         // servers and their content prepended. A no-op without the `mcp` profile.
-        final String userText = mcpResourceService.expandReferences(message);
+        final String userText = mcpResourceService.expandReferences(request.message());
+        final List<Media> media = request.media();
         var spec = this.chatClient.prompt()
                 .user(u -> {
                     u.text(userText);
                     if (media != null) {
                         media.forEach(u::media);
                     }
-                })
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, finalConversationId));
-
-        spec = applyRag(spec, ragDocumentIds);
+                });
+        for (Consumer<ChatClient.AdvisorSpec> advisorToApply : getAllAdvisorsToApply(request)){
+            spec = spec.advisors(advisorToApply);
+        }
 
         List<MyTools> activeTools = toolsService.getEnabledTools();
         if (activeTools != null && !activeTools.isEmpty()) {
@@ -173,10 +117,10 @@ public class ClaudeService {
         }
 
         // Tools published by mcp-server, present only under the `mcp` profile. They are
-        // ToolCallbacks rather than annotated beans, so they attach through a separate call.
-        ToolCallback[] mcpTools = toolsService.getMcpToolCallbacks();
-        if (mcpTools.length > 0) {
-            spec = spec.toolCallbacks(mcpTools);
+        // ToolCallbacks rather than annotated beans; tools(...) tells the two apart by type.
+        List<ToolCallback> mcpTools = toolsService.getMcpToolCallbacks();
+        if (!mcpTools.isEmpty()) {
+            spec = spec.tools(mcpTools);
         }
 
         var optionsBuilder = AnthropicChatOptions.builder();
@@ -188,6 +132,7 @@ public class ClaudeService {
                     .build());
         }
         // Attached PDFs ride along as citation documents so answers can cite pages.
+        List<AnthropicCitationDocument> citationDocuments = request.citationDocuments();
         if (citationDocuments != null && !citationDocuments.isEmpty()) {
             optionsBuilder.citationDocuments(citationDocuments);
         }
@@ -195,6 +140,8 @@ public class ClaudeService {
         if (toolsService.isNativeWebSearchToolEnabled()) {
             optionsBuilder.webSearchTool(AnthropicWebSearchTool.builder().maxUses(5).build());
         }
+        Integer maxTokens = request.maxTokens();
+        Integer thinkingBudget = request.thinkingBudget();
         boolean thinkingOn = thinkingBudget != null && thinkingBudget > 0;
         if (thinkingOn) {
             // Anthropic: budget >= 1024, maxTokens must exceed budget, and temperature must
@@ -207,58 +154,26 @@ public class ClaudeService {
             if (maxTokens != null) {
                 optionsBuilder.maxTokens(maxTokens);
             }
-            if (temperature != null) {
-                optionsBuilder.temperature(temperature);
+            if (request.temperature() != null) {
+                optionsBuilder.temperature(request.temperature());
             }
         }
         spec = spec.options(optionsBuilder);
-        if (tone != null) {
-            spec = spec.system(getSystemPrompt(tone));
+        if (request.tone() != null) {
+            spec = spec.system(getSystemPrompt(request.tone()));
         }
         return spec;
     }
 
     /** Log Anthropic cache hit/write token counts so caching effectiveness is observable. */
     private void logCacheUsage(@Nullable ChatResponse response) {
-        if (response == null || response.getMetadata() == null) {
+        if (response == null) {
             return;
         }
         var usage = response.getMetadata().getUsage();
-        if (usage == null) {
-            return;
-        }
         log.info("cache: read={} write={} prompt={} completion={}",
                 usage.getCacheReadInputTokens(), usage.getCacheWriteInputTokens(),
                 usage.getPromptTokens(), usage.getCompletionTokens());
-    }
-
-    /**
-     * Attach the RAG retrieval advisor to the request, scoped by the caller's ragDocumentIds:
-     *   - absent (null)          -> retrieve across all documents
-     *   - present with valid ids -> restrict retrieval to those documents (docId filter)
-     *   - present but empty      -> skip the advisor entirely: no vector-store query at all
-     * Returns the spec unchanged when RAG is disabled (ragAdvisor is null).
-     */
-    private ChatClient.ChatClientRequestSpec applyRag(
-            ChatClient.ChatClientRequestSpec spec,
-            @Nullable Set<String> ragDocumentIds) {
-        if (ragAdvisor == null) {
-            return spec;
-        }
-        if (ragDocumentIds == null) {
-            return spec.advisors(ragAdvisor);
-        }
-        String inList = ragDocumentIds.stream()
-                .filter(id -> id != null && id.matches("[0-9a-fA-F-]{36}"))   // UUIDs only, block injection
-                .map(id -> "'" + id + "'")
-                .collect(Collectors.joining(", "));
-        if (inList.isBlank()) {
-            return spec;   // empty selection -> advisor not attached -> RAG off, no DB query
-        }
-        // QuestionAnswerAdvisor re-parses FILTER_EXPRESSION as filter text -> pass a DSL string.
-        String docFilter = "docId in [" + inList + "]";
-        return spec.advisors(ragAdvisor)
-                .advisors(a -> a.param(QuestionAnswerAdvisor.FILTER_EXPRESSION, docFilter));
     }
 
     public static String getSystemPrompt(Tone tone){

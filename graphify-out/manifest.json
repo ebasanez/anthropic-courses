@@ -1,0 +1,322 @@
+{
+  "chat/pom.xml": {
+    "mtime": 1785913197.256626,
+    "ast_hash": "164e52fe896db4f6ffe1f0e0c1df5971",
+    "semantic_hash": "164e52fe896db4f6ffe1f0e0c1df5971"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/ChatApplication.java": {
+    "mtime": 1784700837.8595636,
+    "ast_hash": "08762088bb44236d3486004b88347ad2",
+    "semantic_hash": "08762088bb44236d3486004b88347ad2"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/config/Configuration.java": {
+    "mtime": 1783145411.6085453,
+    "ast_hash": "53e44b193d34b15b4e5ace1e3f6672c6",
+    "semantic_hash": "53e44b193d34b15b4e5ace1e3f6672c6"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/config/ModelLoggingConfig.java": {
+    "mtime": 1783145519.8480935,
+    "ast_hash": "21721ccdc85668f75598940c8ffa777f",
+    "semantic_hash": "21721ccdc85668f75598940c8ffa777f"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/config/RagConfig.java": {
+    "mtime": 1784701473.00197,
+    "ast_hash": "9240e415ec2b770ec60254243d839c98",
+    "semantic_hash": "9240e415ec2b770ec60254243d839c98"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/controller/ClaudeController.java": {
+    "mtime": 1784615165.7936132,
+    "ast_hash": "8497e937f3fc61a1105e22adb48d43a7",
+    "semantic_hash": "8497e937f3fc61a1105e22adb48d43a7"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/controller/ConfigController.java": {
+    "mtime": 1785913190.5205736,
+    "ast_hash": "b5a285a1d909d1a994edd32c715cb466",
+    "semantic_hash": "b5a285a1d909d1a994edd32c715cb466"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/controller/DocumentHelper.java": {
+    "mtime": 1784624083.445852,
+    "ast_hash": "a4f9ea1396ea46f926d0c103d9b30423",
+    "semantic_hash": "a4f9ea1396ea46f926d0c103d9b30423"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/controller/RagController.java": {
+    "mtime": 1784701519.0595162,
+    "ast_hash": "31e267ded53319fd93214abf5c15e01d",
+    "semantic_hash": "31e267ded53319fd93214abf5c15e01d"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/dto/ChatRequestInputDto.java": {
+    "mtime": 1784540414.3702376,
+    "ast_hash": "2a13786193241c20d37ee0499dfb6ec0",
+    "semantic_hash": "2a13786193241c20d37ee0499dfb6ec0"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/dto/ChatRequestWithMediaInputDto.java": {
+    "mtime": 1784615145.469694,
+    "ast_hash": "61bb780cfaf3f7de2329382f517193b6",
+    "semantic_hash": "61bb780cfaf3f7de2329382f517193b6"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/rag/EmbeddingServerVectorStore.java": {
+    "mtime": 1784701452.490995,
+    "ast_hash": "b20c0d384de18ea4be7ef5aebe2f4407",
+    "semantic_hash": "b20c0d384de18ea4be7ef5aebe2f4407"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/service/ClaudeService.java": {
+    "mtime": 1785913165.6464646,
+    "ast_hash": "73c83ba9d39cf062740eca51c883261a",
+    "semantic_hash": "73c83ba9d39cf062740eca51c883261a"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/service/FileAnalysisService.java": {
+    "mtime": 1784624480.567078,
+    "ast_hash": "15aa6af89c82d7df6b5da2e680a4df06",
+    "semantic_hash": "15aa6af89c82d7df6b5da2e680a4df06"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/service/McpResourceService.java": {
+    "mtime": 1785913144.4942367,
+    "ast_hash": "fe895d9def63a674e6fcef574de3f9cc",
+    "semantic_hash": "fe895d9def63a674e6fcef574de3f9cc"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/service/ToolsService.java": {
+    "mtime": 1785912034.915841,
+    "ast_hash": "12f7b94832cf20b0df680290bd5ec6dd",
+    "semantic_hash": "12f7b94832cf20b0df680290bd5ec6dd"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/tools/DateTimeTools.java": {
+    "mtime": 1783151452.8087645,
+    "ast_hash": "0db87183640cc89b8c72e87e6508ae39",
+    "semantic_hash": "0db87183640cc89b8c72e87e6508ae39"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/tools/MyTools.java": {
+    "mtime": 1783100546.353752,
+    "ast_hash": "a58da23fff205d53da4a249da91aab53",
+    "semantic_hash": "a58da23fff205d53da4a249da91aab53"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/tools/TextEditorTool.java": {
+    "mtime": 1783322194.6318803,
+    "ast_hash": "0c6431a9095b77fe52e8064573b488c4",
+    "semantic_hash": "0c6431a9095b77fe52e8064573b488c4"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/vo/Tone.java": {
+    "mtime": 1781278947.4319515,
+    "ast_hash": "cbc72aff01ede7172de85311d04e6938",
+    "semantic_hash": "cbc72aff01ede7172de85311d04e6938"
+  },
+  "chat/src/main/java/com/bprojects/courses/claude/vo/ToolDefinitionsVO.java": {
+    "mtime": 1783323285.4217198,
+    "ast_hash": "df6817f760f8d76d1a71a0baf76763b7",
+    "semantic_hash": "df6817f760f8d76d1a71a0baf76763b7"
+  },
+  "chat/src/test/java/com/bprojects/courses/claude/ChatApplicationTests.java": {
+    "mtime": 1784700838.8008142,
+    "ast_hash": "c93b1b5fd1a3fca4427a974467cad927",
+    "semantic_hash": "c93b1b5fd1a3fca4427a974467cad927"
+  },
+  "chat/src/test/java/com/bprojects/courses/claude/rag/EmbeddingServerVectorStoreTest.java": {
+    "mtime": 1784701577.3357658,
+    "ast_hash": "6fa3a1d7f9ea0d2e75a82c084ff79f7f",
+    "semantic_hash": "6fa3a1d7f9ea0d2e75a82c084ff79f7f"
+  },
+  "chat/src/test/java/com/bprojects/courses/claude/service/ClaudeServiceToneEvaluationTest.java": {
+    "mtime": 1784181696.5956948,
+    "ast_hash": "06f764a3fa0bd5790f4ce83a3cd4ae4a",
+    "semantic_hash": "06f764a3fa0bd5790f4ce83a3cd4ae4a"
+  },
+  "chat/src/test/java/com/bprojects/courses/claude/service/Grader.java": {
+    "mtime": 1782888736.002162,
+    "ast_hash": "d2bd021a25c37202f5d62e458eed07f8",
+    "semantic_hash": "d2bd021a25c37202f5d62e458eed07f8"
+  },
+  "chat/src/test/java/com/bprojects/courses/claude/service/McpResourceServiceTest.java": {
+    "mtime": 1785913214.0293846,
+    "ast_hash": "e0937983b342fa9c2a3a0eaa125f7553",
+    "semantic_hash": "e0937983b342fa9c2a3a0eaa125f7553"
+  },
+  "chat/src/test/java/com/bprojects/courses/claude/tools/ToolSchemaGenerationTest.java": {
+    "mtime": 1785910939.5475821,
+    "ast_hash": "74d0c0582845c6bab0527a34db035f4b",
+    "semantic_hash": "74d0c0582845c6bab0527a34db035f4b"
+  },
+  "chat/src/test/resources/aws-prompt-evaluation-dataset-lite.json": {
+    "mtime": 1782888252.1637645,
+    "ast_hash": "452d5a521ea4102a953a25b9227e5d71",
+    "semantic_hash": "452d5a521ea4102a953a25b9227e5d71"
+  },
+  "chat/src/test/resources/aws-prompt-evaluation-dataset.json": {
+    "mtime": 1782888252.1852798,
+    "ast_hash": "55389e13482b6c3c403775d5c4400fc3",
+    "semantic_hash": "55389e13482b6c3c403775d5c4400fc3"
+  },
+  "embedding-server/pom.xml": {
+    "mtime": 1785908848.6372645,
+    "ast_hash": "986fbdc95e7544f5be9fe0e53da58754",
+    "semantic_hash": "986fbdc95e7544f5be9fe0e53da58754"
+  },
+  "embedding-server/src/main/java/com/bprojects/courses/embedding/EmbeddingServerApplication.java": {
+    "mtime": 1784701372.2965791,
+    "ast_hash": "8d725782fc9b4e948134ab9930746b9e",
+    "semantic_hash": "8d725782fc9b4e948134ab9930746b9e"
+  },
+  "embedding-server/src/main/java/com/bprojects/courses/embedding/config/EmbeddingConfig.java": {
+    "mtime": 1784701379.8502212,
+    "ast_hash": "f53e5d21716a600daa0ccdebace945cc",
+    "semantic_hash": "f53e5d21716a600daa0ccdebace945cc"
+  },
+  "embedding-server/src/main/java/com/bprojects/courses/embedding/controller/DocumentController.java": {
+    "mtime": 1784701408.359487,
+    "ast_hash": "073b1951bb5d31633eeb78de1a322add",
+    "semantic_hash": "073b1951bb5d31633eeb78de1a322add"
+  },
+  "embedding-server/src/main/java/com/bprojects/courses/embedding/controller/SearchController.java": {
+    "mtime": 1784701401.6538706,
+    "ast_hash": "830546b10898f210c8026ea16183ad08",
+    "semantic_hash": "830546b10898f210c8026ea16183ad08"
+  },
+  "embedding-server/src/main/java/com/bprojects/courses/embedding/dto/SearchRequestDto.java": {
+    "mtime": 1784701382.6452668,
+    "ast_hash": "c7db3f737dc96c1237d3258e9882d797",
+    "semantic_hash": "c7db3f737dc96c1237d3258e9882d797"
+  },
+  "embedding-server/src/main/java/com/bprojects/courses/embedding/dto/SearchResultDto.java": {
+    "mtime": 1784701384.4622507,
+    "ast_hash": "99d673ec55b574e8a2c454f315120efb",
+    "semantic_hash": "99d673ec55b574e8a2c454f315120efb"
+  },
+  "embedding-server/src/main/java/com/bprojects/courses/embedding/rag/SemanticTextSplitter.java": {
+    "mtime": 1784701363.0037465,
+    "ast_hash": "bfd65b4cbfed73a310433e14206376b3",
+    "semantic_hash": "bfd65b4cbfed73a310433e14206376b3"
+  },
+  "embedding-server/src/main/java/com/bprojects/courses/embedding/service/DocumentIngestionService.java": {
+    "mtime": 1784701427.1722019,
+    "ast_hash": "b121546baa577db8977e4772a8312637",
+    "semantic_hash": "b121546baa577db8977e4772a8312637"
+  },
+  "embedding-server/src/main/java/com/bprojects/courses/embedding/service/SearchService.java": {
+    "mtime": 1784701396.1621773,
+    "ast_hash": "68bfd0023a7cbee438988deb267bbde0",
+    "semantic_hash": "68bfd0023a7cbee438988deb267bbde0"
+  },
+  "embedding-server/src/main/java/com/bprojects/courses/embedding/vo/DocumentInfo.java": {
+    "mtime": 1784701363.0133326,
+    "ast_hash": "fe29e22f7ff29f84d9057f7fda7c7a7b",
+    "semantic_hash": "fe29e22f7ff29f84d9057f7fda7c7a7b"
+  },
+  "embedding-server/src/main/java/com/bprojects/courses/embedding/vo/RagSplitMethod.java": {
+    "mtime": 1784701363.0178554,
+    "ast_hash": "71c63bc8cb14ec2e53e8c95926351884",
+    "semantic_hash": "71c63bc8cb14ec2e53e8c95926351884"
+  },
+  "mcp-server/pom.xml": {
+    "mtime": 1785908858.346079,
+    "ast_hash": "131722ebabb2b8da62953d1acc73e7e4",
+    "semantic_hash": "131722ebabb2b8da62953d1acc73e7e4"
+  },
+  "mcp-server/src/main/java/com/bprojects/courses/mcp/McpServerApplication.java": {
+    "mtime": 1784702567.6977222,
+    "ast_hash": "0484c0fb5b3b6fa3eec7a04a1e644e49",
+    "semantic_hash": "0484c0fb5b3b6fa3eec7a04a1e644e49"
+  },
+  "mcp-server/src/main/java/com/bprojects/courses/mcp/config/McpToolsConfig.java": {
+    "mtime": 1784703151.4464111,
+    "ast_hash": "4f4aa041b293e3b0dfdf655e2fc7c5a3",
+    "semantic_hash": "4f4aa041b293e3b0dfdf655e2fc7c5a3"
+  },
+  "mcp-server/src/main/java/com/bprojects/courses/mcp/resources/DocsCatalog.java": {
+    "mtime": 1785907581.040213,
+    "ast_hash": "2a4186ee8034fd239dbc6e6dae9694d8",
+    "semantic_hash": "2a4186ee8034fd239dbc6e6dae9694d8"
+  },
+  "mcp-server/src/main/java/com/bprojects/courses/mcp/resources/DocsResources.java": {
+    "mtime": 1785907600.5550823,
+    "ast_hash": "e2dc161b907d0191d4b4ad75a547b936",
+    "semantic_hash": "e2dc161b907d0191d4b4ad75a547b936"
+  },
+  "mcp-server/src/main/java/com/bprojects/courses/mcp/tools/MathTools.java": {
+    "mtime": 1785511103.988,
+    "ast_hash": "88fcfd4909fe5bd8000205047f94ad4d",
+    "semantic_hash": "88fcfd4909fe5bd8000205047f94ad4d"
+  },
+  "mcp-server/src/test/java/com/bprojects/courses/mcp/resources/DocsResourcesTest.java": {
+    "mtime": 1785907620.4633877,
+    "ast_hash": "519b97c452c0e5b524f582f46a6a6a05",
+    "semantic_hash": "519b97c452c0e5b524f582f46a6a6a05"
+  },
+  "mcp-server/src/test/java/com/bprojects/courses/mcp/tools/MathToolsTest.java": {
+    "mtime": 1785511104.02,
+    "ast_hash": "c870c76634aa2bfcc29b78b31c4f52fe",
+    "semantic_hash": "c870c76634aa2bfcc29b78b31c4f52fe"
+  },
+  "mvnw": {
+    "mtime": 1781158017.680075,
+    "ast_hash": "ab50dd89da7da2346b28003352eeeeeb",
+    "semantic_hash": "ab50dd89da7da2346b28003352eeeeeb"
+  },
+  "pom.xml": {
+    "mtime": 1785910847.0272086,
+    "ast_hash": "8499ea1e0928e2be35725734b0cc9dbe",
+    "semantic_hash": "8499ea1e0928e2be35725734b0cc9dbe"
+  },
+  "util/create_earth_pdf.py": {
+    "mtime": 1784389654.118562,
+    "ast_hash": "fb08faef885c7e68bfe3395d40ef820b",
+    "semantic_hash": "fb08faef885c7e68bfe3395d40ef820b"
+  },
+  "CLAUDE.md": {
+    "mtime": 1785913308.4899378,
+    "ast_hash": "852ee21141925ae39a58426838ebcaa7",
+    "semantic_hash": "852ee21141925ae39a58426838ebcaa7"
+  },
+  "HELP.md": {
+    "mtime": 1781158017.6824188,
+    "ast_hash": "0aac48d1b040dbb8676d964e41f2bd1a",
+    "semantic_hash": "0aac48d1b040dbb8676d964e41f2bd1a"
+  },
+  "chat/src/main/resources/application-mcp.yaml": {
+    "mtime": 1785912003.3769166,
+    "ast_hash": "9e64c49279080ba1a3a345698deb6e85",
+    "semantic_hash": "9e64c49279080ba1a3a345698deb6e85"
+  },
+  "chat/src/main/resources/application.yaml": {
+    "mtime": 1785908960.079518,
+    "ast_hash": "45cf16eb545a327246c0d2b6acb0cce0",
+    "semantic_hash": "45cf16eb545a327246c0d2b6acb0cce0"
+  },
+  "chat/src/main/resources/static/index.html": {
+    "mtime": 1784615224.132481,
+    "ast_hash": "08ef0d26ff90bb680ea36904157376b4",
+    "semantic_hash": "08ef0d26ff90bb680ea36904157376b4"
+  },
+  "chat/src/test/resources/application.yaml": {
+    "mtime": 1784700924.8503609,
+    "ast_hash": "cf7114f8e2438be0f3cc6007fe372881",
+    "semantic_hash": "cf7114f8e2438be0f3cc6007fe372881"
+  },
+  "embedding-server/compose.yaml": {
+    "mtime": 1784701624.6037612,
+    "ast_hash": "a28a36e4ed21c678cc59a6dfab8f844a",
+    "semantic_hash": "a28a36e4ed21c678cc59a6dfab8f844a"
+  },
+  "embedding-server/src/main/resources/application.yaml": {
+    "mtime": 1785908974.8439624,
+    "ast_hash": "55780b179d878b8906f40beaa764ed68",
+    "semantic_hash": "55780b179d878b8906f40beaa764ed68"
+  },
+  "mcp-server/src/main/resources/application.yaml": {
+    "mtime": 1785908941.310389,
+    "ast_hash": "d11f69321a7fad3d4fdf95c099ddc1a7",
+    "semantic_hash": "d11f69321a7fad3d4fdf95c099ddc1a7"
+  },
+  "mcp-server/src/main/resources/docs/README.md": {
+    "mtime": 1785907605.1378586,
+    "ast_hash": "6a25393458e31c94a798adc8936d810d",
+    "semantic_hash": "6a25393458e31c94a798adc8936d810d"
+  },
+  "mcp-server/src/main/resources/docs/guides/uris.md": {
+    "mtime": 1785907607.381134,
+    "ast_hash": "cd1f4b0cee26b02f2c100e1de7e2a360",
+    "semantic_hash": "cd1f4b0cee26b02f2c100e1de7e2a360"
+  },
+  "util/El_Planeta_Tierra_APA.pdf": {
+    "mtime": 1784389761.6272192,
+    "ast_hash": "02fc733b0dc229e4ca230b4df1bffc9a",
+    "semantic_hash": "02fc733b0dc229e4ca230b4df1bffc9a"
+  }
+}

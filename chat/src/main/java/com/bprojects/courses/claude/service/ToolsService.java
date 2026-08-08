@@ -20,15 +20,13 @@ import java.util.stream.Stream;
 @Service
 public class ToolsService {
 
-    private static final ToolCallback[] NO_CALLBACKS = new ToolCallback[0];
-
     // Each tool mapped to whether it is currently enabled.
     private final Map<MyTools, Boolean> toolStates = new ConcurrentHashMap<>();
     private final Environment environment;
     // Tools published by remote MCP servers, resolved once at startup. Empty unless the `mcp`
     // profile configured a connection (see application-mcp.yaml); they have no local bean, so
     // the enable/disable map above does not cover them.
-    private final ToolCallback[] mcpToolCallbacks;
+    private final List<ToolCallback> mcpToolCallbacks;
 
     public ToolsService(List<MyTools> tools, Environment environment,
                         ObjectProvider<ToolCallbackProvider> mcpToolCallbackProvider) {
@@ -39,12 +37,12 @@ public class ToolsService {
         this.mcpToolCallbacks = mcpToolCallbackProvider.stream()
                 .map(ToolCallbackProvider::getToolCallbacks)
                 .flatMap(Arrays::stream)
-                .toArray(ToolCallback[]::new);
+                .toList();
     }
 
     /** Remote MCP tools to attach to a request; empty when no MCP server is configured. */
-    public ToolCallback[] getMcpToolCallbacks() {
-        return mcpToolCallbacks.length == 0 ? NO_CALLBACKS : mcpToolCallbacks.clone();
+    public List<ToolCallback> getMcpToolCallbacks() {
+        return mcpToolCallbacks;
     }
 
     // Claude's native web search tool is on unless tools.web-search.enabled=false
@@ -91,7 +89,7 @@ public class ToolsService {
         }
         List<ToolDefinition> customTools = Stream.concat(
                         Arrays.stream(ToolCallbacks.from(getEnabledTools().toArray())),
-                        Arrays.stream(mcpToolCallbacks))
+                        mcpToolCallbacks.stream())
                 .map(ToolCallback::getToolDefinition)
                 .toList();
         return new ToolDefinitionsVO(nativeTools, customTools);
