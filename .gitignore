@@ -37,3 +37,6 @@ target/
 
 # AI local files
 graphify-out/cache/
+
+# Graphify files
+graphify-out/
