@@ -42,7 +42,7 @@ public class DocsResources {
     }
 
     @McpResource(
-            uri = "docs://mcp-server",
+            uri = "docs/",
             name = "module-docs",
             title = "mcp-server documents",
             description = """
@@ -60,7 +60,7 @@ public class DocsResources {
      *             slashes percent-encoded — {@code README.md}, {@code guides%2Furis.md}
      */
     @McpResource(
-            uri = "docs://mcp-server/{path}",
+            uri = "docs/{path}",
             name = "module-document",
             title = "mcp-server document",
             description = """

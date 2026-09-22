@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "R=\"${CLAUDE_PROJECT_DIR:-$PWD}\"; { echo \"Session resumed after compaction. Working state:\"; echo \"Branch: $(git -C \"$R\" rev-parse --abbrev-ref HEAD)\"; echo \"Uncommitted files:\"; git -C \"$R\" status --porcelain | head -25; echo \"Recent commits:\"; git -C \"$R\" log --oneline -5; } | jq -Rs '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:.}}' 2>/dev/null || true",
+            "timeout": 15,
+            "statusMessage": "Restoring post-compaction context"
+          }
+        ]
+      }
+    ]
+  }
+}

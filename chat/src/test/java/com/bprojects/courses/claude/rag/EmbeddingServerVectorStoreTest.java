@@ -51,7 +51,7 @@ class EmbeddingServerVectorStoreTest {
 
     @Test
     void docIdFilterSurvivesTheRoundTripToTheServer() {
-        // Same filter shape ClaudeService builds when the user scopes RAG to selected documents.
+        // Same filter shape ChatService builds when the user scopes RAG to selected documents.
         String dsl = "docId in ['1e1e2b3c-1111-2222-3333-444455556666', '2f2f3c4d-7777-8888-9999-aaaabbbbcccc']";
         SearchRequest request = SearchRequest.builder().query("q").filterExpression(dsl).build();
 

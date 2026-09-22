@@ -3,7 +3,7 @@ package com.bprojects.courses.claude.controller;
 import com.bprojects.courses.claude.ChatRequestVO;
 import com.bprojects.courses.claude.controller.dto.ChatRequestInputDto;
 import com.bprojects.courses.claude.controller.dto.ChatRequestWithMediaInputDto;
-import com.bprojects.courses.claude.service.ClaudeService;
+import com.bprojects.courses.claude.service.ChatService;
 import com.bprojects.courses.claude.service.FileAnalysisService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,38 +14,38 @@ import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/api/ai")
-public class ClaudeController {
+public class ChatController {
 
-    private final ClaudeService claudeService;
+    private final ChatService chatService;
     private final FileAnalysisService fileAnalysisService;
 
-    public ClaudeController(ClaudeService claudeService, FileAnalysisService fileAnalysisService) {
-        this.claudeService = claudeService;
+    public ChatController(ChatService chatService, FileAnalysisService fileAnalysisService) {
+        this.chatService = chatService;
         this.fileAnalysisService = fileAnalysisService;
     }
 
     // Simple GET text generation
     @GetMapping("/chat")
     public String chat(ChatRequestInputDto request) {
-        return claudeService.generateResponse(toRequestVO(request));
+        return chatService.generateResponse(toRequestVO(request));
     }
 
     // Server-Sent Events (SSE) for real-time text streaming
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> stream(ChatRequestInputDto request) {
-        return claudeService.streamResponse(toRequestVO(request));
+        return chatService.streamResponse(toRequestVO(request));
     }
 
     // Multipart POST variant: same params as GET plus optional file attachments (images + PDFs)
     @PostMapping(value = "/chat", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String chatWithMedia(ChatRequestWithMediaInputDto request) {
-        return claudeService.generateResponse(toRequestVOWithMedia(request));
+        return chatService.generateResponse(toRequestVOWithMedia(request));
     }
 
     @PostMapping(value = "/stream", consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> streamWithMedia(ChatRequestWithMediaInputDto request) {
-        return claudeService.streamResponse(toRequestVOWithMedia(request));
+        return chatService.streamResponse(toRequestVOWithMedia(request));
     }
 
     /** Map the bound command object onto the service-layer request, without attachments. */

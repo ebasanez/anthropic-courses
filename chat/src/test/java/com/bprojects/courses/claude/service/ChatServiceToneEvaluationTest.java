@@ -9,7 +9,6 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 
@@ -21,14 +20,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @EnabledIfEnvironmentVariable(named = "ANTHROPIC_API_KEY", matches = ".+")
-class ClaudeServiceToneEvaluationTest {
+class ChatServiceToneEvaluationTest {
 
     private record EvalTask(String id, String type, String task, String criteria) {}
 
     private static List<EvalTask> tasks;
 
     @Autowired
-    private ClaudeService claudeService;
+    private ChatService chatService;
 
     @BeforeAll
     static void loadDataset() throws IOException {
@@ -47,10 +46,10 @@ class ClaudeServiceToneEvaluationTest {
         List<String> lowScores = new ArrayList<>();
         int totalScore = 0;
         for (EvalTask task : tasks) {
-            String response = claudeService.generateResponse(
+            String response = chatService.generateResponse(
                     new ChatRequestVO(task.task(), 1024, null, null, null, null, tone));
             int score = Grader.validate(task.type(), task.task(),response, task.criteria(),
-                    prompt -> claudeService.generateResponse(
+                    prompt -> chatService.generateResponse(
                             new ChatRequestVO(prompt, 1024, 0.0, null, null, null, null)));
             totalScore += score;
             System.out.printf("[%s][%s][%s] score=%d/10%n", tone, task.id(), task.type(), score);

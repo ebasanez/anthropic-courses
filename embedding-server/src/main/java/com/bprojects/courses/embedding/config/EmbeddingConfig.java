@@ -26,6 +26,7 @@ class EmbeddingConfig {
         return new TokenTextSplitter();
     }
 
+    // TODO: Research hot o implement an hybrid chunker: semantic + hierachical and merge results from both
     /** Embedding-based topic breakpoints — slower; threshold via {@code rag.semantic.breakpoint-percentile}. */
     @Bean
     SemanticTextSplitter semanticTextSplitter(

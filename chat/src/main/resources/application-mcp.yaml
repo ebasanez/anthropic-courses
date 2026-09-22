@@ -13,7 +13,7 @@ spring:
       client:
         name: chat-mcp-client
         request-timeout: 30s
-        type: SYNC                         # matches ClaudeService's blocking + streaming use
+        type: SYNC                         # matches ChatService's blocking + streaming use
         toolcallback:
           enabled: true                    # publish the remote tools as ToolCallback beans
         streamable-http:

@@ -36,7 +36,7 @@ import java.util.List;
  * referenced with a {@code container_upload} block — inline document content is not visible to
  * the sandbox. Spring AI's {@code ChatClient} cannot express either of those, so this service
  * talks to the Anthropic SDK directly (reusing the autoconfigured client). The returned text is
- * then fed back through {@link ClaudeService}, which keeps memory, RAG and tone intact.
+ * then fed back through {@link ChatService}, which keeps memory, RAG and tone intact.
  */
 @Service
 public class FileAnalysisService {

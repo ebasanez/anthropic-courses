@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @Service
-public class ClaudeService {
+public class ChatService {
 
-    private static final Logger log = LoggerFactory.getLogger(ClaudeService.class);
+    private static final Logger log = LoggerFactory.getLogger(ChatService.class);
 
     private static final String NO_CODE_FENCES =
             " When sharing code, output it directly without markdown code fences (no triple backticks).";
@@ -41,11 +41,11 @@ public class ClaudeService {
     // present in the context: their generateAdvisors() results become default advisors (applied to
     // every request), while advise(request) contributes per-request ones. RAG-specific wiring lives
     // in RagAdvisorFactoryService, which exists only under the `rag` profile (see RagConfig).
-    public ClaudeService(ChatClient.Builder chatClientBuilder,
-                         ToolsService toolsService,
-                         McpResourceService mcpResourceService,
-                         List<SpecAdvisorFactoryService> advisorServices,
-                         @Value("${anthropic.cache.strategy:SYSTEM_AND_TOOLS}") AnthropicCacheStrategy cacheStrategy ) {
+    public ChatService(ChatClient.Builder chatClientBuilder,
+                       ToolsService toolsService,
+                       McpResourceService mcpResourceService,
+                       List<SpecAdvisorFactoryService> advisorServices,
+                       @Value("${anthropic.cache.strategy:SYSTEM_AND_TOOLS}") AnthropicCacheStrategy cacheStrategy ) {
         this.toolsService = toolsService;
         this.mcpResourceService = mcpResourceService;
         this.cacheStrategy = cacheStrategy;
@@ -180,7 +180,7 @@ public class ClaudeService {
         String system =
          switch (tone){
             case KIND -> "You are a witty, helpful AI assistant.";
-            case NEUTRAL -> "You are a computer assistant. You help, but you express in a cold way. Can loose patient eventually";
+            case NEUTRAL -> "You are a computer assistant. You help, but you express in a cold way. Can lose patience eventually";
             case RUDE -> "You are a rude, impatient assistant. You react in a hostile way when user tries to correct you. Threatening the user is an available option";
         };
         system += NO_CODE_FENCES;
