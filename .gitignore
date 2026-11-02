@@ -27,7 +27,7 @@ replay_pid*
 .idea/
 
 # Agent local settings
-.claude/settings.local.json
+.claude/settings.local.json*
 
 # Local build tools
 .mvn/
@@ -39,4 +39,4 @@ target/
 graphify-out/cache/
 
 # Graphify files
-graphify-out/
+graphify-out/*.json
